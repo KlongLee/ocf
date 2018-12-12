@@ -14,10 +14,8 @@
 #define OCF_ENGINE_DEBUG_IO_NAME "d2c"
 #include "engine_debug.h"
 
-static void _ocf_d2c_completion(void *private_data, int error)
+static void _ocf_d2c_completion(struct ocf_request *rq, int error)
 {
-	struct ocf_request *rq = private_data;
-
 	rq->error = error;
 
 	OCF_DEBUG_RQ(rq, "Completion");
@@ -51,8 +49,8 @@ int ocf_io_d2c(struct ocf_request *rq)
 	/* Get OCF request - increase reference counter */
 	ocf_rq_get(rq);
 
-	ocf_submit_obj_req(&cache->core_obj[rq->core_id].obj, rq, rq->rw,
-			_ocf_d2c_completion, rq);
+	ocf_submit_obj_req(&cache->core_obj[rq->core_id].obj, rq,
+			_ocf_d2c_completion);
 
 	ocf_engine_update_block_stats(rq);
 
