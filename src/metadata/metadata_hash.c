@@ -12,19 +12,9 @@
 #include "../utils/utils_cache_line.h"
 #include "../ocf_def_priv.h"
 
-#define OCF_METADATA_HASH_DEBUG 0
-
-#if 1 == OCF_METADATA_HASH_DEBUG
-#define OCF_DEBUG_TRACE(cache) \
-	ocf_cache_log(cache, log_info, "[Metadata][Hash] %s\n", __func__)
-
-#define OCF_DEBUG_PARAM(cache, format, ...) \
-	ocf_cache_log(cache, log_info, "[Metadata][Hash] %s - "format"\n", \
-			__func__, ##__VA_ARGS__)
-#else
-#define OCF_DEBUG_TRACE(cache)
-#define OCF_DEBUG_PARAM(cache, format, ...)
-#endif
+#define OCF_DEBUG_TAG "meta.hash"
+#define OCF_DEBUG 0
+#include "../ocf_debug.h"
 
 #define METADATA_MEM_POOL(ctrl, section) ctrl->raw_desc[section].mem_pool
 
@@ -228,7 +218,7 @@ static int ocf_metadata_hash_calculate_metadata_size(
 	ocf_cache_line_t count_pages;
 	uint32_t i;
 
-	OCF_DEBUG_PARAM(cache, "Cache lines = %lld", cache_lines);
+	OCF_DEBUG_CACHE_PARAM(cache, "Cache lines = %lld", cache_lines);
 
 	cache_lines = ctrl->device_lines;
 	lowest_diff = cache_lines;
@@ -298,8 +288,8 @@ static int ocf_metadata_hash_calculate_metadata_size(
 		/* Update new value of cache lines */
 		cache_lines += diff_lines;
 
-		OCF_DEBUG_PARAM(cache, "Diff pages = %lld", diff_lines);
-		OCF_DEBUG_PARAM(cache, "Cache lines = %lld", cache_lines);
+		OCF_DEBUG_CACHE_PARAM(cache, "Diff pages = %lld", diff_lines);
+		OCF_DEBUG_CACHE_PARAM(cache, "Cache lines = %lld", cache_lines);
 
 		i_diff++;
 
@@ -307,7 +297,7 @@ static int ocf_metadata_hash_calculate_metadata_size(
 
 	ctrl->count_pages = count_pages;
 	ctrl->cachelines = cache_lines;
-	OCF_DEBUG_PARAM(cache, "Cache lines = %u", ctrl->cachelines);
+	OCF_DEBUG_CACHE_PARAM(cache, "Cache lines = %u", ctrl->cachelines);
 
 	if (ctrl->device_lines < ctrl->cachelines)
 		return -1;
@@ -328,7 +318,7 @@ static const char * const ocf_metadata_hash_raw_names[] = {
 		[metadata_segment_core_runtime]		= "Core runtime",
 		[metadata_segment_core_uuid]		= "Core UUID",
 };
-#if 1 == OCF_METADATA_HASH_DEBUG
+#if 1 == OCF_DEBUG
 /*
  * Debug info functions prints metadata and raw containers information
  */
@@ -343,20 +333,20 @@ static void ocf_metadata_hash_raw_info(struct ocf_cache *cache,
 	for (i = 0; i < metadata_segment_max; i++) {
 		struct ocf_metadata_raw *raw = &(ctrl->raw_desc[i]);
 
-		OCF_DEBUG_PARAM(cache, "Raw : name            = %s",
+		OCF_DEBUG_CACHE_PARAM(cache, "Raw : name            = %s",
 				ocf_metadata_hash_raw_names[i]);
-		OCF_DEBUG_PARAM(cache, "    : metadata type   = %u", i);
-		OCF_DEBUG_PARAM(cache, "    : raw type        = %u",
+		OCF_DEBUG_CACHE_PARAM(cache, "    : metadata type   = %u", i);
+		OCF_DEBUG_CACHE_PARAM(cache, "    : raw type        = %u",
 				raw->raw_type);
-		OCF_DEBUG_PARAM(cache, "    : entry size      = %u",
+		OCF_DEBUG_CACHE_PARAM(cache, "    : entry size      = %u",
 				raw->entry_size);
-		OCF_DEBUG_PARAM(cache, "    : entries         = %llu",
+		OCF_DEBUG_CACHE_PARAM(cache, "    : entries         = %llu",
 				raw->entries);
-		OCF_DEBUG_PARAM(cache, "    : entries in page = %u",
+		OCF_DEBUG_CACHE_PARAM(cache, "    : entries in page = %u",
 				raw->entries_in_page);
-		OCF_DEBUG_PARAM(cache, "    : page offset     = %llu",
+		OCF_DEBUG_CACHE_PARAM(cache, "    : page offset     = %llu",
 				raw->ssd_pages_offset);
-		OCF_DEBUG_PARAM(cache, "    : pages           = %llu",
+		OCF_DEBUG_CACHE_PARAM(cache, "    : pages           = %llu",
 				raw->ssd_pages);
 	}
 
@@ -376,7 +366,7 @@ static void ocf_metadata_hash_raw_info(struct ocf_cache *cache,
 
 		}
 
-		OCF_DEBUG_PARAM(cache, "%s capacity %llu %s",
+		OCF_DEBUG_CACHE_PARAM(cache, "%s capacity %llu %s",
 			ocf_metadata_hash_raw_names[i], capacity, unit);
 	}
 }
@@ -396,7 +386,7 @@ static void ocf_metadata_hash_deinit_variable_size(struct ocf_cache *cache)
 	struct ocf_metadata_hash_ctrl *ctrl = (struct ocf_metadata_hash_ctrl *)
 			cache->metadata.iface_priv;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	/*
 	 * De initialize RAW types
@@ -420,9 +410,9 @@ static inline void ocf_metadata_config_init(struct ocf_cache *cache,
 	settings->sector_start = 0;
 	settings->sector_end = settings->sector_count - 1;
 
-	OCF_DEBUG_PARAM(cache, "Cache line size = %lu, bits count = %llu, "
-			"status size = %lu",
-			settings->size, settings->sector_count,
+	OCF_DEBUG_CACHE_PARAM(cache, "Cache line size = %lu, bits count = %llu"
+			", status size = %lu", settings->size,
+			settings->sector_count,
 			ocf_metadata_status_sizeof(settings));
 }
 
@@ -456,7 +446,7 @@ static int ocf_metadata_hash_init(struct ocf_cache *cache,
 	uint32_t page = 0;
 	int result = 0;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ENV_WARN_ON(cache->metadata.iface_priv);
 
@@ -547,7 +537,7 @@ static int ocf_metadata_hash_init_variable_size(struct ocf_cache *cache,
 	struct ocf_cache_line_settings *settings =
 		(struct ocf_cache_line_settings *)&cache->metadata.settings;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ENV_WARN_ON(!cache->metadata.iface_priv);
 
@@ -592,10 +582,12 @@ static int ocf_metadata_hash_init_variable_size(struct ocf_cache *cache,
 		return -1;
 	}
 
-	OCF_DEBUG_PARAM(cache, "Metadata begin pages = %u", ctrl->start_page);
-	OCF_DEBUG_PARAM(cache, "Metadata count pages = %u", ctrl->count_pages);
-	OCF_DEBUG_PARAM(cache, "Metadata end pages = %u", ctrl->start_page
-			+ ctrl->count_pages);
+	OCF_DEBUG_CACHE_PARAM(cache, "Metadata begin pages = %u",
+			ctrl->start_page);
+	OCF_DEBUG_CACHE_PARAM(cache, "Metadata count pages = %u",
+			ctrl->count_pages);
+	OCF_DEBUG_CACHE_PARAM(cache, "Metadata end pages = %u",
+			ctrl->start_page + ctrl->count_pages);
 
 	/*
 	 * Initialize all dynamic size  RAW types
@@ -825,7 +817,7 @@ static ocf_cache_line_t ocf_metadata_hash_pages(struct ocf_cache *cache)
 {
 	struct ocf_metadata_hash_ctrl *ctrl = NULL;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -840,7 +832,7 @@ static ocf_cache_line_t ocf_metadata_hash_cachelines(
 {
 	struct ocf_metadata_hash_ctrl *ctrl = NULL;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -853,7 +845,7 @@ static size_t ocf_metadata_hash_size_of(struct ocf_cache *cache)
 	size_t size = 0;
 	struct ocf_metadata_hash_ctrl *ctrl = NULL;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -890,7 +882,7 @@ static int ocf_metadata_hash_load_superblock(struct ocf_cache *cache)
 	struct ocf_metadata_uuid *muuid;
 	struct ocf_data_obj_uuid uuid;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 	ENV_BUG_ON(!ctrl);
@@ -1015,7 +1007,7 @@ static int ocf_metadata_hash_flush_superblock(struct ocf_cache *cache)
 	struct ocf_metadata_hash_ctrl *ctrl;
 	struct ocf_superblock_config *superblock;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -1072,7 +1064,7 @@ static int ocf_metadata_hash_set_shutdown_status(
 	struct ocf_metadata_hash_ctrl *ctrl;
 	struct ocf_superblock_config *superblock;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	/*
 	 * Get metadata hash service control structure
@@ -1101,7 +1093,7 @@ static uint64_t ocf_metadata_hash_get_reserved_lba(
 {
 	struct ocf_metadata_hash_ctrl *ctrl;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 	return ctrl->raw_desc[metadata_segment_reserved].ssd_pages_offset *
@@ -1122,7 +1114,7 @@ static int ocf_metadata_hash_flush_all(struct ocf_cache *cache)
 	int result = 0;
 	uint32_t i = 0;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -1182,7 +1174,7 @@ static void ocf_metadata_hash_flush(struct ocf_cache *cache,
 	int result = 0;
 	struct ocf_metadata_hash_ctrl *ctrl = NULL;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -1212,7 +1204,7 @@ static void ocf_metadata_hash_flush_mark(struct ocf_cache *cache,
 {
 	struct ocf_metadata_hash_ctrl *ctrl = NULL;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -1236,7 +1228,7 @@ static void ocf_metadata_hash_flush_do_asynch(struct ocf_cache *cache,
 	int result = 0;
 	struct ocf_metadata_hash_ctrl *ctrl = NULL;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -1267,7 +1259,7 @@ static int ocf_metadata_hash_load_all(struct ocf_cache *cache)
 	int result = 0, i = 0;
 	uint32_t checksum;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -1431,7 +1423,7 @@ static int _ocf_metadata_hash_load_recovery_legacy(
 	int result = 0;
 	struct ocf_metadata_hash_ctrl *ctrl = NULL;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ctrl = (struct ocf_metadata_hash_ctrl *) cache->metadata.iface_priv;
 
@@ -1517,7 +1509,7 @@ static int _ocf_metadata_hash_load_recovery_atomic(
 {
 	int result = 0;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	/* Collision table to get mapping cache line to HDD sector*/
 	result |= metadata_io_read_i_atomic(cache,
@@ -1541,7 +1533,7 @@ static int ocf_metadata_hash_load_recovery(struct ocf_cache *cache)
 	int result = 0;
 	bool rebuild_dirty_only;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 
 	if (ocf_data_obj_is_atomic(&cache->device->obj)) {

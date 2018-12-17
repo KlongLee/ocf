@@ -12,14 +12,9 @@
 #include "../utils/utils_io.h"
 #include "../utils/utils_cache_line.h"
 
-#define OCF_METADATA_DEBUG 0
-
-#if 1 == OCF_METADATA_DEBUG
-#define OCF_DEBUG_TRACE(cache) \
-	ocf_cache_log(cache, log_info, "[Metadata][Hash] %s\n", __func__)
-#else
-#define OCF_DEBUG_TRACE(cache)
-#endif
+#define OCF_DEBUG_TAG "meta.hash"
+#define OCF_DEBUG 0
+#include "../ocf_debug.h"
 
 int ocf_metadata_init(struct ocf_cache *cache,
 		ocf_cache_line_size_t cache_line_size)
@@ -28,7 +23,7 @@ int ocf_metadata_init(struct ocf_cache *cache,
 			&cache->metadata.iface;
 	int ret;
 
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	ENV_BUG_ON(cache->metadata.iface_priv);
 
@@ -48,26 +43,26 @@ int ocf_metadata_init_variable_size(struct ocf_cache *cache, uint64_t device_siz
 		ocf_cache_line_size_t cache_line_size,
 		ocf_metadata_layout_t layout)
 {
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 	return cache->metadata.iface.init_variable_size(cache, device_size,
 			cache_line_size, layout);
 }
 
 void ocf_metadata_init_freelist_partition(struct ocf_cache *cache)
 {
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 	cache->metadata.iface.layout_iface->init_freelist(cache);
 }
 
 void ocf_metadata_init_hash_table(struct ocf_cache *cache)
 {
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 	cache->metadata.iface.init_hash_table(cache);
 }
 
 void ocf_metadata_deinit(struct ocf_cache *cache)
 {
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	if (cache->metadata.iface.deinit) {
 		cache->metadata.iface.deinit(cache);
@@ -78,7 +73,7 @@ void ocf_metadata_deinit(struct ocf_cache *cache)
 
 void ocf_metadata_deinit_variable_size(struct ocf_cache *cache)
 {
-	OCF_DEBUG_TRACE(cache);
+	OCF_DEBUG_CACHE_TRACE(cache);
 
 	if (cache->metadata.iface.deinit_variable_size)
 		cache->metadata.iface.deinit_variable_size(cache);
@@ -264,7 +259,8 @@ int ocf_metadata_load_properties(ocf_data_obj_t cache_obj,
 		return -ENOMEM;
 	}
 
-	OCF_DEBUG_TRACE(cache);
+	/* TODO(wolszews): not sure if cache initialized */
+	OCF_DEBUG_CACHE_TRACE(cache_obj->cache);
 
 	err_value = ocf_metadata_read_properties(cache_obj->cache->owner,
 			cache_obj, superblock);
@@ -357,8 +353,6 @@ int ocf_metadata_probe(ocf_ctx_t ctx, ocf_data_obj_t cache_obj,
 		ocf_log(ctx, log_err, "Allocation memory error");
 		return -ENOMEM;
 	}
-
-	OCF_DEBUG_TRACE(cache);
 
 	result = ocf_metadata_read_properties(ctx, cache_obj, superblock);
 	if (result)
