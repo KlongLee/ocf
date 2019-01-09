@@ -165,18 +165,34 @@ struct ocf_stats_core {
 int ocf_stats_initialize(ocf_cache_t cache, ocf_core_id_t core_id);
 
 /**
- * @brief ocf_io_class_get_stats retrieve cache statistics
+ * @brief ocf_io_classes_get_stats retrieve io classes statistics for given
+ *			cache instance
  *
  * Retrieve buffer of cache statistics for given cache instance.
  *
- * @param[in] core core ID to which request pertains
- * @param[in] io_class IO class, stats of which are requested
- * @param[out] stats statistics structure that shall be filled as
+ * @param[in] cache cache to which request pertains
+ * @param[out] stats statistics structure vector that shall be filled as
  *             a result of this function invocation.
  *
  * @result zero upon successful completion; error code otherwise
  */
-int ocf_io_class_get_stats(ocf_core_t core, uint32_t io_class,
+int ocf_io_classes_get_stats(ocf_cache_t cache,
+		struct ocf_stats_io_class *stats);
+
+/**
+ * @brief ocf_io_classes_get_stats_core retrieve io classes statistics
+ *			for given core
+ *
+ * Retrieve buffer of cache statistics for given cache instance.
+ *
+ * @param[in] cache cache to which request pertains
+ * @param[in] core_id ID of core to which request pertains
+ * @param[out] stats statistics structure vector that shall be filled as
+ *             a result of this function invocation.
+ *
+ * @result zero upon successful completion; error code otherwise
+ */
+int ocf_io_classes_get_core_stats(ocf_cache_t cache, ocf_core_id_t core_id,
 		struct ocf_stats_io_class *stats);
 
 /**
