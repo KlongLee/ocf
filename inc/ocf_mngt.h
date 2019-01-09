@@ -544,7 +544,7 @@ struct ocf_mngt_io_class_config {
 };
 
 /**
- * @brief Configure IO class in given cache
+ * @brief Configure IO classes in given cache
  *
  * @param[in] cache Cache handle
  * @param[in] cfg IO class configuration
@@ -552,7 +552,7 @@ struct ocf_mngt_io_class_config {
  * @retval 0 Configuration have been set successfully
  * @retval Non-zero Error occurred and configuration not been set
  */
-int ocf_mngt_io_class_configure(ocf_cache_t cache,
+int ocf_mngt_cache_io_classes_configure(ocf_cache_t cache,
 		const struct ocf_mngt_io_class_config *cfg);
 
 /**
