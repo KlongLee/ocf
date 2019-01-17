@@ -209,7 +209,7 @@ static void __init_partitions(struct ocf_cache *cache)
 
 	/* Init default Partition */
 	ENV_BUG_ON(ocf_mngt_add_partition_to_cache(cache, PARTITION_DEFAULT,
-			"Unclassified", 0, PARTITION_SIZE_MAX,
+			ocf_cache_mode_wt, "Unclassified", 0, PARTITION_SIZE_MAX,
 			OCF_IO_CLASS_PRIO_LOWEST, true));
 
 	/* Add other partition to the cache and make it as dummy */
@@ -219,7 +219,7 @@ static void __init_partitions(struct ocf_cache *cache)
 
 		/* Init default Partition */
 		ENV_BUG_ON(ocf_mngt_add_partition_to_cache(cache, i_part,
-				"Inactive", 0, PARTITION_SIZE_MAX,
+				ocf_cache_mode_wt, "Inactive", 0, PARTITION_SIZE_MAX,
 				OCF_IO_CLASS_PRIO_LOWEST, false));
 	}
 }
@@ -890,7 +890,6 @@ static int _ocf_mngt_init_prepare_metadata(
 					&cache->device->obj,
 					&line_size,
 					&cache->conf_meta->metadata_layout,
-					&cache->conf_meta->cache_mode,
 					&attach_params->metadata.shutdown_status,
 					&attach_params->metadata.dirty_flushed);
 			if (attach_params->metadata.status) {
@@ -900,7 +899,7 @@ static int _ocf_mngt_init_prepare_metadata(
 		} else {
 			attach_params->metadata.status = ocf_metadata_load_properties(
 					&cache->device->obj,
-					NULL, NULL, NULL,
+					NULL, NULL,
 					&attach_params->metadata.shutdown_status,
 					&attach_params->metadata.dirty_flushed);
 			/* don't handle result; if no valid metadata is present
@@ -1155,7 +1154,6 @@ static int _ocf_mngt_cache_init(ocf_cache_t cache,
 	/*
 	 * Super block elements initialization
 	 */
-	cache->conf_meta->cache_mode = params->metadata.cache_mode;
 	cache->conf_meta->metadata_layout = params->metadata.layout;
 
 	for (i = 0; i < OCF_IO_CLASS_MAX + 1; ++i) {
@@ -1920,91 +1918,6 @@ out:
 	return result;
 }
 
-static int _cache_mng_set_cache_mode(ocf_cache_t cache, ocf_cache_mode_t mode,
-		uint8_t flush)
-{
-	ocf_cache_mode_t mode_new = mode;
-	ocf_cache_mode_t mode_old = cache->conf_meta->cache_mode;
-	int result = 0;
-
-	/* Check if IO interface type is valid */
-	if (!ocf_cache_mode_is_valid(mode))
-		return -OCF_ERR_INVAL;
-
-	if (mode_new == mode_old) {
-		ocf_cache_log(cache, log_info, "Cache mode '%s' is already set\n",
-				ocf_get_io_iface_name(mode_new));
-		return 0;
-	}
-
-	cache->conf_meta->cache_mode = mode_new;
-
-	if (flush) {
-		/* Flush required, do it, do it, do it... */
-		result = ocf_mngt_cache_flush_nolock(cache, true);
-
-		if (result) {
-			cache->conf_meta->cache_mode = mode_old;
-			return result;
-		}
-
-	} else if (ocf_cache_mode_wb == mode_old) {
-		int i;
-
-		for (i = 0; i != OCF_CORE_MAX; ++i) {
-			if (!env_bit_test(i, cache->conf_meta->valid_object_bitmap))
-				continue;
-			env_atomic_set(&cache->core_runtime_meta[i].
-					initial_dirty_clines,
-					env_atomic_read(&cache->
-						core_runtime_meta[i].dirty_clines));
-		}
-	}
-
-	if (ocf_metadata_flush_superblock(cache)) {
-		ocf_cache_log(cache, log_err, "Failed to store cache mode "
-				"change. Reverting\n");
-		cache->conf_meta->cache_mode = mode_old;
-		return -OCF_ERR_WRITE_CACHE;
-	}
-
-	ocf_cache_log(cache, log_info, "Changing cache mode from '%s' to '%s' "
-			"successful\n", ocf_get_io_iface_name(mode_old),
-			ocf_get_io_iface_name(mode_new));
-
-	return 0;
-}
-
-int ocf_mngt_cache_set_mode(ocf_cache_t cache, ocf_cache_mode_t mode,
-		uint8_t flush)
-{
-	int result;
-
-	OCF_CHECK_NULL(cache);
-
-	if (!ocf_cache_mode_is_valid(mode)) {
-	        ocf_cache_log(cache, log_err, "Cache mode %u is invalid\n", mode);
-		return -OCF_ERR_INVAL;
-	}
-
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
-	result = _cache_mng_set_cache_mode(cache, mode, flush);
-
-	if (result) {
-		const char *name = ocf_get_io_iface_name(mode);
-
-		ocf_cache_log(cache, log_err, "Setting cache mode '%s' "
-				"failed\n", name);
-	}
-
-	ocf_mngt_cache_unlock(cache);
-
-	return result;
-}
-
 int ocf_mngt_cache_reset_fallback_pt_error_counter(ocf_cache_t cache)
 {
 	OCF_CHECK_NULL(cache);
@@ -2059,11 +1972,48 @@ int ocf_mngt_cache_get_fallback_pt_error_threshold(ocf_cache_t cache,
 	return 0;
 }
 
+/*
+ * Functions used for temporarily switching to fallback pass-through
+ */
+static inline int activate_fallback_pt(ocf_cache_t cache,
+		uint32_t *old_threshold)
+{
+	int result;
+
+	result = ocf_mngt_cache_flush(cache, false);
+	if (result)
+		return result;
+
+	*old_threshold = cache->fallback_pt_error_threshold;
+
+	if (cache->fallback_pt_error_threshold == OCF_CACHE_FALLBACK_PT_INACTIVE) {
+		cache->fallback_pt_error_threshold = 1;
+		env_atomic_inc(&cache->fallback_pt_error_counter);
+	} else {
+		cache->fallback_pt_error_threshold =
+			env_atomic_read(&cache->fallback_pt_error_counter);
+	}
+
+	return result;
+}
+
+static inline void restore_fallback_pt(ocf_cache_t cache,
+		uint32_t old_threshold)
+{
+	ENV_BUG_ON(old_threshold > OCF_CACHE_FALLBACK_PT_MAX_ERROR_THRESHOLD);
+
+	cache->fallback_pt_error_threshold = old_threshold;
+	if (old_threshold &&
+			env_atomic_read(&cache->fallback_pt_error_counter) > 0) {
+		env_atomic_dec(&cache->fallback_pt_error_counter);
+	}
+}
+
 int ocf_mngt_cache_detach(ocf_cache_t cache)
 {
 	int i, j, no;
 	int result;
-	ocf_cache_mode_t mode;
+	uint32_t old_fallback_pt_threshold;
 
 	no = cache->conf_meta->core_count;
 
@@ -2077,8 +2027,7 @@ int ocf_mngt_cache_detach(ocf_cache_t cache)
 	}
 
 	/* temporarily switch to PT */
-	mode = cache->conf_meta->cache_mode;
-	result = _cache_mng_set_cache_mode(cache, ocf_cache_mode_pt, true);
+	result = activate_fallback_pt(cache, &old_fallback_pt_threshold);
 	if (result)
 		goto unlock;
 
@@ -2090,7 +2039,7 @@ int ocf_mngt_cache_detach(ocf_cache_t cache)
 	/* Restore original mode in metadata - it will be used when new
 	   cache device is attached. By this tume all requests are served
 	   in direct-to-core mode. */
-	cache->conf_meta->cache_mode = mode;
+	restore_fallback_pt(cache, old_fallback_pt_threshold);
 
 	/* remove cacheline metadata and cleaning policy meta for all cores */
 	for (i = 0, j = 0; j < no && i < OCF_CORE_MAX; i++) {

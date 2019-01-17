@@ -27,8 +27,8 @@ bool ocf_mngt_cache_is_dirty(ocf_cache_t cache);
 void ocf_mngt_wait_for_io_finish(ocf_cache_t cache);
 
 int ocf_mngt_add_partition_to_cache(struct ocf_cache *cache,
-		ocf_part_id_t part_id, const char *name, uint32_t min_size,
-		uint32_t max_size, uint8_t priority, bool valid);
+		ocf_part_id_t part_id, ocf_cache_mode_t cache_mode, const char *name,
+		uint32_t min_size, uint32_t max_size, uint8_t priority, bool valid);
 
 bool ocf_mngt_is_cache_locked(ocf_cache_t cache);
 

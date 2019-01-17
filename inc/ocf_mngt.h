@@ -691,19 +691,6 @@ int ocf_mngt_get_seq_cutoff_policy(ocf_cache_t cache, ocf_core_id_t core_id,
 		ocf_seq_cutoff_policy *policy);
 
 /**
- * @brief Set cache mode in given cache
- *
- * @param[in] cache Cache handle
- * @param[in] mode Cache mode to set
- * @param[in] flush Perform flushing before switch cache mode
- *
- * @retval 0 Cache mode have been set successfully
- * @retval Non-zero Error occurred and cache mode not been set
- */
-int ocf_mngt_cache_set_mode(ocf_cache_t cache, ocf_cache_mode_t mode,
-		uint8_t flush);
-
-/**
  * @brief Set cache fallback Pass Through error threshold
  *
  * @param[in] cache Cache handle

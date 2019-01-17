@@ -173,10 +173,6 @@ static inline int ocf_metadata_check_properties(void)
 	field_offset = offsetof(struct ocf_superblock_config, magic_number);
 	ENV_BUG_ON(field_offset >= PAGE_SIZE);
 
-	/* The same checking for IO interface type */
-	field_offset = offsetof(struct ocf_superblock_config, cache_mode);
-	ENV_BUG_ON(field_offset >= PAGE_SIZE);
-
 	/* And the same for version location within superblock structure */
 	field_offset = offsetof(struct ocf_superblock_config, metadata_version);
 	ENV_BUG_ON(field_offset >= PAGE_SIZE);
@@ -240,7 +236,6 @@ out:
  * @param cache_obj object from which to load metadata
  * @param variant - field to which save metadata variant; if NULL,
  *	metadata variant won't be read.
- * @param cache mode; if NULL is passed it won't be read
  * @param shutdown_status - dirty shutdown or clean shutdown
  * @param dirty_flushed - if all dirty data was flushed prior to closing
  *	the cache
@@ -249,7 +244,6 @@ out:
 int ocf_metadata_load_properties(ocf_data_obj_t cache_obj,
 		ocf_cache_line_size_t *line_size,
 		ocf_metadata_layout_t *layout,
-		ocf_cache_mode_t *cache_mode,
 		enum ocf_metadata_shutdown_status *shutdown_status,
 		uint8_t *dirty_flushed)
 {
@@ -303,16 +297,6 @@ int ocf_metadata_load_properties(ocf_data_obj_t cache_obj,
 					"ERROR: Invalid metadata layout!\n");
 		} else {
 			*layout = superblock->metadata_layout;
-		}
-	}
-
-	if (cache_mode) {
-		if (superblock->cache_mode < ocf_cache_mode_max) {
-			*cache_mode = superblock->cache_mode;
-		} else {
-			ocf_cache_log(cache_obj->cache, log_err,
-					"ERROR: Invalid cache mode!\n");
-			err_value = -EINVAL;
 		}
 	}
 

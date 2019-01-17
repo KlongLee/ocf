@@ -54,7 +54,7 @@ bool ocf_cache_is_device_attached(ocf_cache_t cache)
 ocf_cache_mode_t ocf_cache_get_mode(ocf_cache_t cache)
 {
 	OCF_CHECK_NULL(cache);
-	return cache->conf_meta->cache_mode;
+	return cache->user_parts[OCF_IO_CLASS_ID_MIN].config->cache_mode;
 }
 
 static uint32_t _calc_dirty_for(uint64_t dirty_since)

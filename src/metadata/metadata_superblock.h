@@ -21,9 +21,6 @@ struct ocf_superblock_config {
 
 	uint32_t metadata_version;
 
-	/* Currently set cache mode */
-	ocf_cache_mode_t cache_mode;
-
 	ocf_cache_line_t cachelines;
 	uint32_t valid_parts_no;
 

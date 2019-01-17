@@ -309,7 +309,6 @@ static inline ocf_cache_line_t ocf_metadata_entries_hash(
 int ocf_metadata_load_properties(ocf_data_obj_t cache_obj,
 		ocf_cache_line_size_t *line_size,
 		ocf_metadata_layout_t *layout,
-		ocf_cache_mode_t *cache_mode,
 		enum ocf_metadata_shutdown_status *shutdown_status,
 		uint8_t *dirty_flushed);
 
