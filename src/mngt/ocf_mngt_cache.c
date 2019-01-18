@@ -1479,7 +1479,7 @@ int ocf_mngt_cache_start(ocf_ctx_t ctx, ocf_cache_t *cache,
 	return result;
 }
 
-int ocf_mngt_cache_attach_nolock(ocf_cache_t cache,
+int ocf_mngt_cache_attach(ocf_cache_t cache,
 		struct ocf_mngt_cache_device_config *device_cfg)
 {
 	int result;
@@ -1498,25 +1498,6 @@ int ocf_mngt_cache_attach_nolock(ocf_cache_t cache,
 		ocf_cache_log(cache, log_err, "Attaching cache device "
 			       "failed\n");
 	}
-
-	return result;
-}
-
-int ocf_mngt_cache_attach(ocf_cache_t cache,
-		struct ocf_mngt_cache_device_config *device_cfg)
-{
-	int result;
-
-	if (!cache || !device_cfg)
-		return -OCF_ERR_INVAL;
-
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
-	result = ocf_mngt_cache_attach_nolock(cache, device_cfg);
-
-	ocf_mngt_cache_unlock(cache);
 
 	return result;
 }
@@ -1696,7 +1677,7 @@ int ocf_mngt_cache_load(ocf_ctx_t ctx, ocf_cache_t *cache,
 	return 0;
 }
 
-int ocf_mngt_cache_stop_nolock(ocf_cache_t cache)
+int ocf_mngt_cache_stop(ocf_cache_t cache)
 {
 	int result;
 	const char *cache_name;
@@ -1721,23 +1702,6 @@ int ocf_mngt_cache_stop_nolock(ocf_cache_t cache)
 		ocf_log(context, log_info, "Cache %s successfully "
 				"stopped\n", cache_name);
 	}
-
-	return result;
-}
-
-int ocf_mngt_cache_stop(ocf_cache_t cache)
-{
-	int result;
-
-	OCF_CHECK_NULL(cache);
-
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
-	result = ocf_mngt_cache_stop_nolock(cache);
-
-	ocf_mngt_cache_unlock(cache);
 
 	return result;
 }
@@ -1773,33 +1737,29 @@ static int _cache_mng_set_core_seq_cutoff_threshold(ocf_core_t core, void *cntx)
 	return 0;
 }
 
-int ocf_mngt_set_seq_cutoff_threshold(ocf_cache_t cache,
-		ocf_core_id_t core_id, uint32_t thresh)
+int ocf_mngt_set_seq_cutoff_threshold(ocf_core_t core, uint32_t thresh)
 {
-	int result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
+	OCF_CHECK_NULL(core);
 
-	if (core_id == OCF_CORE_ID_INVALID) {
-		/* Core id was not specified so threshold will be set
-		 * for cache and all attached cores.
-		 */
-		result = ocf_core_visit(cache,
-				_cache_mng_set_core_seq_cutoff_threshold,
-				&thresh,
-				true);
-	} else {
-		/* Setting threshold for specified core. */
-		ocf_core_t core;
-		result = ocf_core_get(cache, core_id, &core);
-		if (result)
-			goto END;
-		result = _cache_mng_set_core_seq_cutoff_threshold(core, &thresh);
-	}
-END:
-	ocf_mngt_cache_unlock(cache);
+	return _cache_mng_set_core_seq_cutoff_threshold(core, &thresh);
+}
 
-	return result;
+int ocf_mngt_set_seq_cutoff_threshold_all(ocf_cache_t cache, uint32_t thresh)
+{
+	OCF_CHECK_NULL(cache);
+
+	return ocf_core_visit(cache, _cache_mng_set_core_seq_cutoff_threshold,
+			&thresh, true);
+}
+
+int ocf_mngt_get_seq_cutoff_threshold(ocf_core_t core, uint32_t *thresh)
+{
+	OCF_CHECK_NULL(core);
+	OCF_CHECK_NULL(thresh);
+
+	*thresh = ocf_core_get_seq_cutoff_threshold(core);
+
+	return 0;
 }
 
 static const char *_ocf_seq_cutoff_policy_names[ocf_seq_cutoff_policy_max] = {
@@ -1848,76 +1808,31 @@ static int _cache_mng_set_core_seq_cutoff_policy(ocf_core_t core, void *cntx)
 	return 0;
 }
 
-int ocf_mngt_set_seq_cutoff_policy(ocf_cache_t cache, ocf_core_id_t core_id,
+int ocf_mngt_set_seq_cutoff_policy(ocf_core_t core,
 		ocf_seq_cutoff_policy policy)
 {
-	ocf_core_t core;
-	int result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
+	OCF_CHECK_NULL(core);
 
-	if (core_id == OCF_CORE_ID_INVALID) {
-		/* Core id was not specified so policy will be set
-		 * for cache and all attached cores.
-		 */
-		result = ocf_core_visit(cache,
-				_cache_mng_set_core_seq_cutoff_policy,
-				&policy,
-				true);
-	} else {
-		/* Setting policy for specified core. */
-		result = ocf_core_get(cache, core_id, &core);
-		if (result)
-			goto END;
-		result = _cache_mng_set_core_seq_cutoff_policy(core, &policy);
-	}
-END:
-	ocf_mngt_cache_unlock(cache);
-
-	return result;
+	return _cache_mng_set_core_seq_cutoff_policy(core, &policy);
 }
-
-int ocf_mngt_get_seq_cutoff_threshold(ocf_cache_t cache, ocf_core_id_t core_id,
-		uint32_t *thresh)
+int ocf_mngt_set_seq_cutoff_policy_all(ocf_cache_t cache,
+		ocf_seq_cutoff_policy policy)
 {
-	ocf_core_t core;
-	int result;
+	OCF_CHECK_NULL(cache);
 
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
-	result = ocf_core_get(cache, core_id, &core);
-	if (result)
-		goto out;
-
-	*thresh = ocf_core_get_seq_cutoff_threshold(core);
-
-out:
-	ocf_mngt_cache_unlock(cache);
-
-	return result;
+	return ocf_core_visit(cache, _cache_mng_set_core_seq_cutoff_policy,
+			&policy, true);
 }
 
-int ocf_mngt_get_seq_cutoff_policy(ocf_cache_t cache, ocf_core_id_t core_id,
+int ocf_mngt_get_seq_cutoff_policy(ocf_core_t core,
 		ocf_seq_cutoff_policy *policy)
 {
-	ocf_core_t core;
-	int result;
+	OCF_CHECK_NULL(core);
+	OCF_CHECK_NULL(policy);
 
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
-	result = ocf_core_get(cache, core_id, &core);
-	if (result)
-		goto out;
 	*policy = ocf_core_get_seq_cutoff_policy(core);
 
-out:
-	ocf_mngt_cache_unlock(cache);
-
-	return result;
+	return 0;
 }
 
 static int _cache_mng_set_cache_mode(ocf_cache_t cache, ocf_cache_mode_t mode,
@@ -1941,7 +1856,7 @@ static int _cache_mng_set_cache_mode(ocf_cache_t cache, ocf_cache_mode_t mode,
 
 	if (flush) {
 		/* Flush required, do it, do it, do it... */
-		result = ocf_mngt_cache_flush_nolock(cache, true);
+		result = ocf_mngt_cache_flush(cache, true);
 
 		if (result) {
 			cache->conf_meta->cache_mode = mode_old;
@@ -1987,10 +1902,6 @@ int ocf_mngt_cache_set_mode(ocf_cache_t cache, ocf_cache_mode_t mode,
 		return -OCF_ERR_INVAL;
 	}
 
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
 	result = _cache_mng_set_cache_mode(cache, mode, flush);
 
 	if (result) {
@@ -1999,8 +1910,6 @@ int ocf_mngt_cache_set_mode(ocf_cache_t cache, ocf_cache_mode_t mode,
 		ocf_cache_log(cache, log_err, "Setting cache mode '%s' "
 				"failed\n", name);
 	}
-
-	ocf_mngt_cache_unlock(cache);
 
 	return result;
 }
@@ -2065,22 +1974,18 @@ int ocf_mngt_cache_detach(ocf_cache_t cache)
 	int result;
 	ocf_cache_mode_t mode;
 
+	OCF_CHECK_NULL(cache);
+
 	no = cache->conf_meta->core_count;
 
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
-	if (!env_atomic_read(&cache->attached)) {
-		result = -EINVAL;
-		goto unlock;
-	}
+	if (!env_atomic_read(&cache->attached))
+		return -EINVAL;
 
 	/* temporarily switch to PT */
 	mode = cache->conf_meta->cache_mode;
 	result = _cache_mng_set_cache_mode(cache, ocf_cache_mode_pt, true);
 	if (result)
-		goto unlock;
+		return result;
 
 	/* wait for all requests referencing cacheline metadata to finish */
 	env_atomic_set(&cache->attached, 0);
@@ -2116,9 +2021,6 @@ int ocf_mngt_cache_detach(ocf_cache_t cache)
 					"Detaching cache failed\n");
 		}
 	}
-
-unlock:
-	ocf_mngt_cache_unlock(cache);
 
 	return result;
 }

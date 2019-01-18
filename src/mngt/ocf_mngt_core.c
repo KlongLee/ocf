@@ -129,7 +129,7 @@ static int _ocf_mngt_cache_add_core(ocf_cache_t cache, ocf_core_t *core,
 		goto error_after_clean_pol;
 	}
 	/* When adding new core to cache, reset all core/cache statistics */
-	ocf_stats_init(tmp_core);
+	ocf_stats_initialize(tmp_core);
 	env_atomic_set(&cache->core_runtime_meta[cfg->core_id].
 			cached_clines, 0);
 	env_atomic_set(&cache->core_runtime_meta[cfg->core_id].
@@ -362,7 +362,7 @@ int ocf_mngt_core_init_front_dobj(ocf_core_t core)
 	return ocf_dobj_open(&core->front_obj);
 }
 
-int ocf_mngt_cache_add_core_nolock(ocf_cache_t cache, ocf_core_t *core,
+int ocf_mngt_cache_add_core(ocf_cache_t cache, ocf_core_t *core,
 		struct ocf_mngt_core_config *cfg)
 {
 	int result;
@@ -419,24 +419,6 @@ out:
 	return result;
 }
 
-int ocf_mngt_cache_add_core(ocf_cache_t cache, ocf_core_t *core,
-		struct ocf_mngt_core_config *cfg)
-{
-	int result;
-
-	OCF_CHECK_NULL(cache);
-
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
-	result = ocf_mngt_cache_add_core_nolock(cache, core, cfg);
-
-	ocf_mngt_cache_unlock(cache);
-
-	return result;
-}
-
 static int _ocf_mngt_cache_remove_core(ocf_core_t core, bool detach)
 {
 	struct ocf_cache *cache = core->obj.cache;
@@ -470,24 +452,17 @@ static int _ocf_mngt_cache_remove_core(ocf_core_t core, bool detach)
 	return 0;
 }
 
-int ocf_mngt_cache_remove_core_nolock(ocf_cache_t cache, ocf_core_id_t core_id,
-		bool detach)
+int ocf_mngt_cache_remove_core(ocf_core_t core)
 {
+	ocf_cache_t cache = ocf_core_get_cache(core);
+	const char *core_name = ocf_core_get_name(core);
 	int result;
-	ocf_core_t core;
-	const char *core_name;
-
-	OCF_CHECK_NULL(cache);
-
-	result = ocf_core_get(cache, core_id, &core);
-	if (result < 0)
-		return -OCF_ERR_CORE_NOT_AVAIL;
 
 	ocf_core_log(core, log_debug, "Removing core\n");
 
 	core_name = ocf_core_get_name(core);
 
-	result = _ocf_mngt_cache_remove_core(core, detach);
+	result = _ocf_mngt_cache_remove_core(core, false);
 	if (!result) {
 		ocf_cache_log(cache, log_info, "Core %s successfully removed\n",
 				core_name);
@@ -499,20 +474,22 @@ int ocf_mngt_cache_remove_core_nolock(ocf_cache_t cache, ocf_core_id_t core_id,
 	return result;
 }
 
-int ocf_mngt_cache_remove_core(ocf_cache_t cache, ocf_core_id_t core_id,
-		bool detach)
+int ocf_mngt_cache_detach_core(ocf_core_t core)
 {
+	ocf_cache_t cache = ocf_core_get_cache(core);
+	const char *core_name = ocf_core_get_name(core);
 	int result;
 
-	OCF_CHECK_NULL(cache);
+	ocf_core_log(core, log_debug, "Detaching core\n");
 
-	result = ocf_mngt_cache_lock(cache);
-	if (result)
-		return result;
-
-	result = ocf_mngt_cache_remove_core_nolock(cache, core_id, detach);
-
-	ocf_mngt_cache_unlock(cache);
+	result = _ocf_mngt_cache_remove_core(core, true);
+	if (!result) {
+		ocf_cache_log(cache, log_info, "Core %s successfully detached\n",
+				core_name);
+	} else {
+		ocf_cache_log(cache, log_err, "Detaching core %s failed\n",
+				core_name);
+	}
 
 	return result;
 }
