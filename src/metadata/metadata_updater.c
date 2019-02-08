@@ -20,6 +20,8 @@ int ocf_metadata_updater_init(ocf_cache_t cache)
 
 	INIT_LIST_HEAD(&syncher->in_progress_head);
 	INIT_LIST_HEAD(&syncher->pending_head);
+	syncher->in_progress_cnt = 0;
+	syncher->pending_cnt = 0;
 	env_mutex_init(&syncher->lock);
 
 	return ctx_metadata_updater_init(cache->owner, mu);
@@ -67,6 +69,7 @@ static int _metadata_updater_iterate_in_progress(ocf_cache_t cache,
 			ENV_BUG_ON(!a_req);
 
 			list_del(&curr->list);
+			syncher->in_progress_cnt--;
 
 			if (env_atomic_dec_return(&a_req->req_active) == 0) {
 				OCF_REALLOC_DEINIT(&a_req->reqs,
@@ -101,10 +104,13 @@ int metadata_updater_check_overlaps(ocf_cache_t cache,
 	/* Either add it to in-progress list or pending list for deferred
 	 * execution.
 	 */
-	if (ret == 0)
+	if (ret == 0) {
 		list_add_tail(&req->list, &syncher->in_progress_head);
-	else
+		syncher->in_progress_cnt++;
+	} else {
 		list_add_tail(&req->list, &syncher->pending_head);
+		syncher->pending_cnt++;
+	}
 
 	env_mutex_unlock(&syncher->lock);
 
@@ -139,6 +145,8 @@ uint32_t ocf_metadata_updater_run(ocf_metadata_updater_t mu)
 		if (ret == 0) {
 			/* Move to in-progress list and kick the workers */
 			list_move_tail(&curr->list, &syncher->in_progress_head);
+			syncher->pending_cnt--;
+			syncher->in_progress_cnt++;
 		}
 		env_mutex_unlock(&syncher->lock);
 		if (ret == 0)
@@ -149,4 +157,14 @@ uint32_t ocf_metadata_updater_run(ocf_metadata_updater_t mu)
 	env_mutex_unlock(&syncher->lock);
 
 	return 0;
+}
+
+uint32_t ocf_metadata_updater_get_pending_cnt(ocf_cache_t cache)
+{
+	return cache->metadata_updater.syncher.pending_cnt;
+}
+
+uint32_t ocf_metadata_updater_get_in_progress_cnt(ocf_cache_t cache)
+{
+	return cache->metadata_updater.syncher.in_progress_cnt;
 }

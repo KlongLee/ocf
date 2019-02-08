@@ -184,7 +184,7 @@ static inline int ocf_metadata_check_properties(void)
 	return 0;
 }
 
-static int ocf_metadata_read_properties(ocf_ctx_t ctx, ocf_data_obj_t cache_obj,
+static int ocf_metadata_read_properties(ocf_ctx_t ctx, ocf_volume_t cache_obj,
 		struct ocf_superblock_config *superblock)
 {
 	ctx_data_t *data;
@@ -195,7 +195,7 @@ static int ocf_metadata_read_properties(ocf_ctx_t ctx, ocf_data_obj_t cache_obj,
 		return -EINVAL;
 
 	/* Allocate resources for IO */
-	io = ocf_dobj_new_io(cache_obj);
+	io = ocf_volume_new_io(cache_obj);
 	data = ctx_data_alloc(ctx, 1);
 
 	/* Check allocation result */
@@ -246,7 +246,7 @@ out:
  *	the cache
  * @return 0 upon successful completion
  */
-int ocf_metadata_load_properties(ocf_data_obj_t cache_obj,
+int ocf_metadata_load_properties(ocf_volume_t cache_obj,
 		ocf_cache_line_size_t *line_size,
 		ocf_metadata_layout_t *layout,
 		ocf_cache_mode_t *cache_mode,
@@ -342,7 +342,7 @@ ocf_metadata_load_variant_ERROR:
 	return err_value;
 }
 
-int ocf_metadata_probe(ocf_ctx_t ctx, ocf_data_obj_t cache_obj,
+int ocf_metadata_probe(ocf_ctx_t ctx, ocf_volume_t cache_obj,
 		bool *clean_shutdown, bool *cache_dirty)
 {
 	struct ocf_superblock_config *superblock;

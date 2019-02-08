@@ -83,7 +83,7 @@ static int _ocf_cleaner_run_check_dirty_inactive(struct ocf_cache *cache)
 		return 0;
 
 	for (i = 0; i < OCF_CORE_MAX; ++i) {
-		if (!env_bit_test(i, cache->conf_meta->valid_object_bitmap))
+		if (!env_bit_test(i, cache->conf_meta->valid_core_bitmap))
 			continue;
 
 		if (cache->core[i].opened && env_atomic_read(&(cache->
@@ -103,7 +103,7 @@ uint32_t ocf_cleaner_run(ocf_cleaner_t c, uint32_t io_queue)
 
 	cache = ocf_cleaner_get_cache(c);
 
-	/* Do not involve cleaning when cache is not running
+	/* Do not involumeve cleaning when cache is not running
 	 * (error, etc.).
 	 */
 	if (!env_bit_test(ocf_cache_state_running, &cache->cache_state) ||

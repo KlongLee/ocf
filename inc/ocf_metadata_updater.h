@@ -47,4 +47,8 @@ void *ocf_metadata_updater_get_priv(ocf_metadata_updater_t mu);
  */
 ocf_cache_t ocf_metadata_updater_get_cache(ocf_metadata_updater_t mu);
 
+uint32_t ocf_metadata_updater_get_pending_cnt(ocf_cache_t cache);
+
+uint32_t ocf_metadata_updater_get_in_progress_cnt(ocf_cache_t cache);
+
 #endif /* __OCF_METADATA_UPDATER_H__ */

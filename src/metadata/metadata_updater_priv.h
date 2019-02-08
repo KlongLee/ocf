@@ -14,6 +14,8 @@ struct ocf_metadata_updater {
 	struct ocf_metadata_io_syncher {
 		struct list_head in_progress_head;
 		struct list_head pending_head;
+		uint32_t in_progress_cnt;
+		uint32_t pending_cnt;
 		env_mutex lock;
 	} syncher;
 

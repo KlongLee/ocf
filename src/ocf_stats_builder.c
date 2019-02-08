@@ -50,7 +50,7 @@ static uint64_t _get_cache_occupancy(ocf_cache_t cache)
 	uint32_t i;
 
 	for (i = 0; i != OCF_CORE_MAX; ++i) {
-		if (!env_bit_test(i, cache->conf_meta->valid_object_bitmap))
+		if (!env_bit_test(i, cache->conf_meta->valid_core_bitmap))
 			continue;
 
 		result += env_atomic_read(
@@ -103,7 +103,7 @@ static void _fill_blocks(struct ocf_stats_blocks *blocks,
 {
 	uint64_t rd, wr, total;
 
-	/* Core data object */
+	/* Core volume */
 	rd = _bytes4k(s->core_obj.read);
 	wr = _bytes4k(s->core_obj.write);
 	total = rd + wr;
@@ -111,7 +111,7 @@ static void _fill_blocks(struct ocf_stats_blocks *blocks,
 	_set(&blocks->core_obj_wr, wr, total);
 	_set(&blocks->core_obj_total, total, total);
 
-	/* Cache data object */
+	/* Cache volume */
 	rd = _bytes4k(s->cache_obj.read);
 	wr = _bytes4k(s->cache_obj.write);
 	total = rd + wr;
