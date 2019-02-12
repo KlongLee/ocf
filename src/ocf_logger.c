@@ -8,6 +8,8 @@
 #include "ocf_logger_priv.h"
 #include "ocf_priv.h"
 
+#define LOG_BUFFER_SIZE 4096
+
 /*
  *
  */
@@ -16,15 +18,34 @@ int ocf_log_raw(ocf_logger_t logger, ocf_logger_lvl_t lvl,
 		const char *fmt, ...)
 {
 	va_list args;
-	int ret;
+	int ret = 0;
+	char *buffer = NULL;
 
-	if (!logger->ops->printf)
-		return -ENOTSUP;
+	if (logger->ops->printf) {
+		va_start(args, fmt);
+		ret = logger->ops->printf(logger, lvl, fmt, args);
+		va_end(args);
+	} else if (logger->ops->log) {
+		buffer = env_zalloc(LOG_BUFFER_SIZE, ENV_MEM_NORMAL);
+		if (!buffer) {
+			ret = -ENOMEM;
+			goto out;
+		}
 
-	va_start(args, fmt);
-	ret = logger->ops->printf(logger, lvl, fmt, args);
-	va_end(args);
+		va_start(args, fmt);
+		ret = vsprintf(buffer, fmt, args);
+		va_end(args);
+		if (ret < 0)
+			goto out;
 
+		ret = logger->ops->log(logger, lvl, buffer);
+
+		env_free(buffer);
+	} else {
+		ret = -ENOTSUP;
+	}
+
+out:
 	return ret;
 }
 

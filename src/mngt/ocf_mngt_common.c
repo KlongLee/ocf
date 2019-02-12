@@ -316,6 +316,14 @@ static ocf_cache_t _ocf_mngt_cache_try_get(ocf_cache_t cache)
 	return NULL;
 }
 
+int ocf_mngt_cache_get_by_handle(ocf_cache_t cache) {
+	ocf_cache_t instance = _ocf_mngt_cache_try_get(cache);
+	if (instance)
+		return 0;
+	else
+		return -OCF_ERR_CACHE_NOT_AVAIL;
+}
+
 static int _ocf_mngt_cache_get_list_cpy(ocf_ctx_t ocf_ctx, ocf_cache_t **list,
 		uint32_t *size)
 {

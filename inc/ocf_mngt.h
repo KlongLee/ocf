@@ -88,6 +88,16 @@ uint32_t ocf_mngt_cache_get_count(ocf_ctx_t ctx);
 int ocf_mngt_cache_get(ocf_ctx_t ctx, ocf_cache_id_t id, ocf_cache_t *cache);
 
 /**
+ * @brief Icrement reference counter of cache
+ *
+ * @param[in] cache OCF cache handle
+ *
+ * @retval 0 Reference counter incremented
+ * @retval -OCF_ERR_CACHE_NOT_AVAIL cache isnt' initialised yet
+ */
+int ocf_mngt_cache_get_by_handle(ocf_cache_t cache);
+
+/**
  * @brief Decrease reference counter in cache
  *
  * @note If cache don't have any reference - deallocate it
