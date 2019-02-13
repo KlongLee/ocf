@@ -175,7 +175,7 @@ void ocf_mngt_cache_put(ocf_cache_t cache)
 	}
 }
 
-int ocf_mngt_cache_get(ocf_ctx_t ocf_ctx, ocf_cache_id_t id, ocf_cache_t *cache)
+int ocf_mngt_cache_get_by_id(ocf_ctx_t ocf_ctx, ocf_cache_id_t id, ocf_cache_t *cache)
 {
 	int error = 0;
 	struct ocf_cache *instance = NULL;
@@ -316,7 +316,7 @@ static ocf_cache_t _ocf_mngt_cache_try_get(ocf_cache_t cache)
 	return NULL;
 }
 
-int ocf_mngt_cache_get_by_handle(ocf_cache_t cache) {
+int ocf_mngt_cache_get(ocf_cache_t cache) {
 	ocf_cache_t instance = _ocf_mngt_cache_try_get(cache);
 	if (instance)
 		return 0;

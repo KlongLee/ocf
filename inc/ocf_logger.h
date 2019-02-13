@@ -33,7 +33,6 @@ struct ocf_logger_ops {
 	void (*close)(ocf_logger_t logger);
 	int (*printf)(ocf_logger_t logger, ocf_logger_lvl_t lvl,
 			const char *fmt, va_list args);
-	int (*log)(ocf_logger_t logger, ocf_logger_lvl_t lvl, const char *msg);
 	int (*printf_rl)(ocf_logger_t logger, const char *func_name);
 	int (*dump_stack)(ocf_logger_t logger);
 };
