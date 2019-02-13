@@ -31,6 +31,7 @@ $(OCFLIB): $(OBJS)
 
 sync:
 	@echo "Syncing OCF sources"
+	@mkdir -p $(ADAPTERDIR)/ocf
 	@$(MAKE) -C $(OCFDIR) inc O=$(ADAPTERDIR)/ocf
 	@$(MAKE) -C $(OCFDIR) src O=$(ADAPTERDIR)/ocf
 	@$(MAKE) -C $(OCFDIR) env O=$(ADAPTERDIR)/ocf ENV=posix

@@ -193,7 +193,7 @@ class Cache:
         return c
 
     def get_and_lock(self, read=True):
-        status = self.owner.lib.ocf_mngt_cache_get_by_handle(self.cache_handle)
+        status = self.owner.lib.ocf_mngt_cache_get(self.cache_handle)
         if status:
             raise OcfError("Couldn't get cache instance", status)
 

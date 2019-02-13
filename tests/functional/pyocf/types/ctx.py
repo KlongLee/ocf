@@ -50,7 +50,7 @@ class OcfCtx:
                 metadata_updater=self.mu.get_ops(),
                 logger=logger.get_ops(),
             ),
-            logger_priv=cast(logger, c_void_p),
+            logger_priv=cast(pointer(logger.get_priv()), c_void_p),
         )
 
         result = self.lib.ocf_ctx_init(byref(self.ctx_handle), byref(self.cfg))

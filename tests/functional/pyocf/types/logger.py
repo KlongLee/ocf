@@ -49,10 +49,13 @@ class LoggerOps(Structure):
         ("_open", OPEN),
         ("_close", CLOSE),
         ("_printf", c_void_p),
-        ("_log", LOG),
         ("_printf_rl", PRINTF_RL),
         ("_dump_stack", DUMP_STACK),
     ]
+
+
+class LoggerPriv(Structure):
+    _fields_ = [("_log", LoggerOps.LOG)]
 
 
 class Logger(Structure):
@@ -61,12 +64,20 @@ class Logger(Structure):
     _fields_ = [("logger", c_void_p)]
 
     def __init__(self):
-        self.ops = LoggerOps(_open=self._open, _close=self._close, _log=self._log)
-        self._as_parameter_ = cast(pointer(self.ops), c_void_p).value
+        self.ops = LoggerOps(
+            _open=self._open,
+            _printf=cast(OcfLib.getInstance().pyocf_printf_helper, c_void_p),
+            _close=self._close,
+        )
+        self.priv = LoggerPriv(_log=self._log)
+        self._as_parameter_ = cast(pointer(self.priv), c_void_p).value
         self._instances_[self._as_parameter_] = self
 
     def get_ops(self):
         return self.ops
+
+    def get_priv(self):
+        return self.priv
 
     @classmethod
     def get_instance(cls, ctx: int):
