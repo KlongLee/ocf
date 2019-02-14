@@ -8,11 +8,10 @@ from enum import IntEnum
 
 from ..ocf import OcfLib
 from .data import Data
-from .shared import SharedOcfObject
 
 
 class IoDir(IntEnum):
-    READ = (0,)
+    READ = 0
     WRITE = 1
 
 
@@ -27,7 +26,7 @@ class Io(Structure):
 
     _instances_ = {}
     _fields_ = [
-        ("_obj", c_void_p),
+        ("_volume", c_void_p),
         ("_ops", POINTER(IoOps)),
         ("_addr", c_uint64),
         ("_flags", c_uint64),

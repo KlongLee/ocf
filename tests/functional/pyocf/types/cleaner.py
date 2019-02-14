@@ -15,10 +15,6 @@ class CleanerOps(Structure):
 
 
 class Cleaner(SharedOcfObject):
-    pass
-
-
-class Cleaner(SharedOcfObject):
 
     _instances_ = {}
     _fields_ = [("cleaner", c_void_p)]

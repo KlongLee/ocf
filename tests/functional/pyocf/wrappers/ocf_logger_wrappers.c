@@ -27,7 +27,7 @@ int pyocf_printf_helper(ocf_logger_t logger, ocf_logger_lvl_t lvl,
 		goto out;
 	}
 
-	ret = vsprintf(buffer, fmt, args);
+	ret = vsnprintf(buffer, LOG_BUFFER_SIZE, fmt, args);
 	if (ret < 0) {
 		env_free(buffer);
 		goto out;

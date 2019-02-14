@@ -5,6 +5,7 @@
 
 from ctypes import *
 from hashlib import md5
+from collections import defaultdict
 
 from .io import Io, IoOps, IoDir
 from .shared import OcfError
@@ -45,7 +46,7 @@ class VolumeProperties(Structure):
     _fields_ = [
         ("_name", c_char_p),
         ("_io_priv_size", c_uint32),
-        ("_dobj_priv_size", c_uint32),
+        ("_volume_priv_size", c_uint32),
         ("_caps", VolumeCaps),
         ("_ops", VolumeOps),
         ("_io_ops", IoOps),
@@ -74,7 +75,6 @@ class Volume(Structure):
 
         self.data = create_string_buffer(int(self.size))
         self._storage = cast(self.data, c_void_p)
-        memset(self._storage, 0, self.size)
         self.reset_stats()
 
     @classmethod
@@ -82,7 +82,7 @@ class Volume(Structure):
         return VolumeProperties(
             _name=str(cls.__name__).encode("ascii"),
             _io_priv_size=sizeof(VolumeIoPriv),
-            _dobj_priv_size=8,
+            _volume_priv_size=0,
             _caps=VolumeCaps(_atomic_writes=0),
             _ops=VolumeOps(
                 _submit_io=cls._submit_io,
@@ -110,17 +110,17 @@ class Volume(Structure):
     @VolumeOps.SUBMIT_IO
     def _submit_io(io):
         io_structure = cast(io, POINTER(Io))
-        dobj = Volume.get_instance(io_structure.contents._obj)
+        volume = Volume.get_instance(io_structure.contents._volume)
 
-        dobj.submit_io(io_structure)
+        volume.submit_io(io_structure)
 
     @staticmethod
     @VolumeOps.SUBMIT_FLUSH
     def _submit_flush(flush):
         io_structure = cast(io, POINTER(Io))
-        dobj = Volume.get_instance(io_structure.contents._obj)
+        volume = Volume.get_instance(io_structure.contents._volume)
 
-        dobj.submit_flush(io_structure)
+        volume.submit_flush(io_structure)
 
     @staticmethod
     @VolumeOps.SUBMIT_METADATA
@@ -131,9 +131,9 @@ class Volume(Structure):
     @VolumeOps.SUBMIT_DISCARD
     def _submit_discard(discard):
         io_structure = cast(io, POINTER(Io))
-        dobj = Volume.get_instance(io_structure.contents._obj)
+        volume = Volume.get_instance(io_structure.contents._volume)
 
-        dobj.submit_discard(io_structure)
+        volume.submit_discard(io_structure)
 
     @staticmethod
     @VolumeOps.SUBMIT_WRITE_ZEROES
@@ -142,38 +142,38 @@ class Volume(Structure):
 
     @staticmethod
     @CFUNCTYPE(c_int, c_void_p)
-    def _open(obj):
-        uuid_ptr = cast(OcfLib.getInstance().ocf_volume_get_uuid(obj), c_void_p)
+    def _open(ref):
+        uuid_ptr = cast(OcfLib.getInstance().ocf_volume_get_uuid(ref), c_void_p)
         uuid_str = cast(
             OcfLib.getInstance().ocf_uuid_to_str_wrapper(uuid_ptr), c_char_p
         )
         uuid = str(uuid_str.value, encoding="ascii")
         try:
-            dobj = Volume.get_by_uuid(uuid)
+            volume = Volume.get_by_uuid(uuid)
         except:
             print("Tried to access unallocated volume {}".format(uuid))
             print("{}".format(Volume._uuid_))
             return -1
 
-        type(dobj)._instances_[obj] = dobj
+        type(volume)._instances_[ref] = volume
 
-        return dobj.open()
+        return volume.open()
 
     @staticmethod
     @VolumeOps.CLOSE
-    def _close(obj):
-        Volume.get_instance(obj).close()
-        del Volume._instances_[obj]
+    def _close(ref):
+        Volume.get_instance(ref).close()
+        del Volume._instances_[ref]
 
     @staticmethod
     @VolumeOps.GET_MAX_IO_SIZE
-    def _get_max_io_size(obj):
+    def _get_max_io_size(ref):
         return S.from_KiB(128)
 
     @staticmethod
     @VolumeOps.GET_LENGTH
-    def _get_length(obj):
-        return Volume.get_instance(obj).get_length()
+    def _get_length(ref):
+        return Volume.get_instance(ref).get_length()
 
     @staticmethod
     @IoOps.SET_DATA
@@ -254,3 +254,7 @@ class ErrorDevice(Volume):
             self.stats["errors"][io.contents._dir] += 1
         else:
             super().submit_io(io)
+
+    def reset_stats(self):
+        super().reset_stats()
+        self.stats["errors"] = {IoDir.WRITE: 0, IoDir.READ: 0}

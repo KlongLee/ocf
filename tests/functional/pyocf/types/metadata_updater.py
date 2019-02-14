@@ -34,15 +34,15 @@ class MetadataUpdater(SharedOcfObject):
 
     @staticmethod
     @MetadataUpdaterOps.INIT
-    def _init(mu):
+    def _init(ref):
         return 0
 
     @staticmethod
     @MetadataUpdaterOps.KICK
-    def _kick(mu):
+    def _kick(ref):
         pass
 
     @staticmethod
     @MetadataUpdaterOps.STOP
-    def _stop(mu):
+    def _stop(ref):
         pass

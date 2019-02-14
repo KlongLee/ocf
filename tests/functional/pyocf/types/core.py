@@ -39,17 +39,15 @@ class Core:
 
     def __init__(
         self,
-        *,
         device: Volume,
-        core_id: int,
-        name: str,
         try_add: bool,
-        seq_cutoff_threshold: int
+        name: str = "",
+        core_id: int = DEFAULT_ID,
+        seq_cutoff_threshold: int = DEFAULT_SEQ_CUTOFF_THRESHOLD,
     ):
 
         self.device = device
         self.device_name = device.uuid
-        self.name = name
         self.core_id = core_id
         self.handle = c_void_p()
         self.cfg = CoreConfig(
@@ -60,6 +58,7 @@ class Core:
                 _size=len(self.device_name) + 1,
             ),
             _core_id=self.core_id,
+            _name=name.encode("ascii") if name else None,
             _volume_type=self.device.type_id,
             _try_add=try_add,
             _seq_cutoff_threshold=seq_cutoff_threshold,
@@ -67,20 +66,8 @@ class Core:
         )
 
     @classmethod
-    def using_device(
-        cls,
-        device,
-        name: str = "",
-        core_id: int = DEFAULT_ID,
-        seq_cutoff_threshold: int = DEFAULT_SEQ_CUTOFF_THRESHOLD,
-    ):
-        c = cls(
-            device=device,
-            core_id=core_id,
-            name=name,
-            try_add=False,
-            seq_cutoff_threshold=seq_cutoff_threshold,
-        )
+    def using_device(cls, device, **kwargs):
+        c = cls(device=device, try_add=False, **kwargs)
 
         return c
 
@@ -122,7 +109,7 @@ class Core:
         status = self.cache.owner.lib.ocf_core_get_stats(self.handle, byref(core_stats))
         if status:
             self.cache.put_and_unlock(True)
-            raise OcfError("Failed getting cache info", status)
+            raise OcfError("Failed getting core stats", status)
 
         self.cache.put_and_unlock(True)
         return {

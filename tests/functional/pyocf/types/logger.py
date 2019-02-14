@@ -15,13 +15,13 @@ logger.setLevel(logging.DEBUG)
 
 
 class LogLevel(IntEnum):
-    EMERG = (0,)
-    ALERT = (1,)
-    CRIT = (2,)
-    ERR = (3,)
-    WARN = (4,)
-    NOTICE = (5,)
-    INFO = (6,)
+    EMERG = 0
+    ALERT = 1
+    CRIT = 2
+    ERR = 3
+    WARN = 4
+    NOTICE = 5
+    INFO = 6
     DEBUG = 7
 
 
@@ -86,23 +86,23 @@ class Logger(Structure):
 
     @staticmethod
     @LoggerOps.LOG
-    def _log(ctx, lvl, msg):
-        Logger.get_instance(ctx).log(lvl, str(msg, "ascii").strip())
+    def _log(ref, lvl, msg):
+        Logger.get_instance(ref).log(lvl, str(msg, "ascii").strip())
         return 0
 
     @staticmethod
     @LoggerOps.OPEN
-    def _open(ctx):
-        if hasattr(Logger.get_instance(ctx), "open"):
-            return Logger.get_instance(ctx).open()
+    def _open(ref):
+        if hasattr(Logger.get_instance(ref), "open"):
+            return Logger.get_instance(ref).open()
         else:
             return 0
 
     @staticmethod
     @LoggerOps.CLOSE
-    def _close(ctx):
-        if hasattr(Logger.get_instance(ctx), "close"):
-            return Logger.get_instance(ctx).close()
+    def _close(ref):
+        if hasattr(Logger.get_instance(ref), "close"):
+            return Logger.get_instance(ref).close()
         else:
             return 0
 
@@ -120,6 +120,9 @@ class DefaultLogger(Logger):
 
     def log(self, lvl: int, msg: str):
         logger.log(LevelMapping[lvl], msg)
+
+    def close(self):
+        logger.handlers = []
 
 
 class FileLogger(Logger):
@@ -141,6 +144,9 @@ class FileLogger(Logger):
 
     def log(self, lvl, msg):
         logger.log(LevelMapping[lvl], msg)
+
+    def close(self):
+        logger.handlers = []
 
 
 class BufferLogger(Logger):

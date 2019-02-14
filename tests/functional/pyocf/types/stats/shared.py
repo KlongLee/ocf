@@ -64,12 +64,12 @@ class RequestsStats(Structure):
 
 class BlocksStats(Structure):
     _fields_ = [
-        ("core_obj_rd", _Stat),
-        ("core_obj_wr", _Stat),
-        ("core_obj_total", _Stat),
-        ("cache_obj_rd", _Stat),
-        ("cache_obj_wr", _Stat),
-        ("cache_obj_total", _Stat),
+        ("core_volume_rd", _Stat),
+        ("core_volume_wr", _Stat),
+        ("core_volume_total", _Stat),
+        ("cache_volume_rd", _Stat),
+        ("cache_volume_wr", _Stat),
+        ("cache_volume_total", _Stat),
         ("volume_rd", _Stat),
         ("volume_wr", _Stat),
         ("volume_total", _Stat),
@@ -78,11 +78,11 @@ class BlocksStats(Structure):
 
 class ErrorsStats(Structure):
     _fields_ = [
-        ("core_obj_rd", _Stat),
-        ("core_obj_wr", _Stat),
-        ("core_obj_total", _Stat),
-        ("cache_obj_rd", _Stat),
-        ("cache_obj_wr", _Stat),
-        ("cache_obj_total", _Stat),
+        ("core_volume_rd", _Stat),
+        ("core_volume_wr", _Stat),
+        ("core_volume_total", _Stat),
+        ("cache_volume_rd", _Stat),
+        ("cache_volume_wr", _Stat),
+        ("cache_volume_total", _Stat),
         ("total", _Stat),
     ]

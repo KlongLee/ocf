@@ -317,11 +317,10 @@ static ocf_cache_t _ocf_mngt_cache_try_get(ocf_cache_t cache)
 }
 
 int ocf_mngt_cache_get(ocf_cache_t cache) {
-	ocf_cache_t instance = _ocf_mngt_cache_try_get(cache);
-	if (instance)
-		return 0;
-	else
+	if (!_ocf_mngt_cache_try_get(cache))
 		return -OCF_ERR_CACHE_NOT_AVAIL;
+
+	return 0;
 }
 
 static int _ocf_mngt_cache_get_list_cpy(ocf_ctx_t ocf_ctx, ocf_cache_t **list,

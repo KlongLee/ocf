@@ -24,10 +24,6 @@ class QueueOps(Structure):
 
 
 class Queue(SharedOcfObject):
-    pass
-
-
-class Queue(SharedOcfObject):
     _instances_ = {}
     _fields_ = [("queue", c_void_p)]
 
@@ -42,19 +38,19 @@ class Queue(SharedOcfObject):
 
     @staticmethod
     @QueueOps.INIT
-    def _init(queue):
-        q = Queue(queue)
+    def _init(ref):
+        q = Queue(ref)
         return 0
 
     @staticmethod
     @QueueOps.KICK_SYNC
-    def _kick_sync(queue):
-        Queue.get_instance(queue).kick_sync()
+    def _kick_sync(ref):
+        Queue.get_instance(ref).kick_sync()
 
     @staticmethod
     @QueueOps.STOP
-    def _stop(queue):
-        Queue.get_instance(queue).stop()
+    def _stop(ref):
+        Queue.get_instance(ref).stop()
 
     def kick_sync(self):
         OcfLib.getInstance().ocf_queue_run(self.queue)

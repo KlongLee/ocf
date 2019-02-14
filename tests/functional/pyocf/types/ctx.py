@@ -40,6 +40,7 @@ class OcfCtx:
         self.lib = lib
         self.volume_types_count = 1
         self.volume_types = {}
+        self.caches = []
 
         self.cfg = OcfCtxCfg(
             name=name,

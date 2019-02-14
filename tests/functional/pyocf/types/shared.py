@@ -48,11 +48,11 @@ class Uuid(Structure):
 
 
 class CacheLineSize(IntEnum):
-    LINE_4KiB = (S.from_KiB(4),)
-    LINE_8KiB = (S.from_KiB(8),)
-    LINE_16KiB = (S.from_KiB(16),)
-    LINE_32KiB = (S.from_KiB(32),)
-    LINE_64KiB = (S.from_KiB(64),)
+    LINE_4KiB = S.from_KiB(4)
+    LINE_8KiB = S.from_KiB(8)
+    LINE_16KiB = S.from_KiB(16)
+    LINE_32KiB = S.from_KiB(32)
+    LINE_64KiB = S.from_KiB(64)
     DEFAULT = LINE_4KiB
 
 
