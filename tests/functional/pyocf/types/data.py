@@ -12,7 +12,7 @@ from ..utils import print_buffer
 
 
 class DataSeek(IntEnum):
-    BEGIN = (0,)
+    BEGIN = 0
     CURRENT = 1
 
 
