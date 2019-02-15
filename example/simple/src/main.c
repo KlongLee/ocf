@@ -33,7 +33,6 @@ int initialize_cache(ocf_ctx_t ctx, ocf_cache_t *cache)
 	cache_cfg.cache_line_size = ocf_cache_line_size_4;
 	cache_cfg.cache_mode = ocf_cache_mode_wt;
 	cache_cfg.metadata_volatile = true;
-	cache_cfg.io_queues = 1;
 	cache_cfg.name = "cache1";
 
 	/* Cache deivce (volume) configuration */
