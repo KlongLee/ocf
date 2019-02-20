@@ -4,7 +4,7 @@
 #
 
 from ctypes import *
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 
 from ..ocf import OcfLib
 from .data import Data
@@ -18,6 +18,8 @@ class IoDir(IntEnum):
 class IoOps(Structure):
     pass
 
+class IoFlags(IntFlag):
+    PYOCF_OWNED=4
 
 class Io(Structure):
     START = CFUNCTYPE(None, c_void_p)
@@ -55,6 +57,12 @@ class Io(Structure):
     def del_object(self):
         del type(self)._instances_[cast(byref(self), c_void_p).value]
 
+    def put(self):
+        OcfLib.getInstance().ocf_io_put(byref(self))
+
+    def get(self):
+        OcfLib.getInstance().ocf_io_get(byref(self))
+
     @staticmethod
     @END
     def c_end(io, err):
@@ -73,16 +81,21 @@ class Io(Structure):
     def end(self, err):
         if err:
             print("IO err {}".format(err))
+
+        if (IoFlags.PYOCF_OWNED & self._flags):
+            self.put()
+
         self.del_object()
 
     def submit(self):
         return OcfLib.getInstance().ocf_core_submit_io_wrapper(byref(self))
 
     def configure(
-        self, addr: int, length: int, direction: IoDir, io_class: int, flags: int
+            self, addr: int, length: int, direction: IoDir, io_class: int, flags: IoFlags
     ):
+        flags |= IoFlags.PYOCF_OWNED
         OcfLib.getInstance().ocf_io_configure_wrapper(
-            byref(self), addr, length, direction, io_class, flags
+            byref(self), addr, length, direction, io_class, int(flags)
         )
 
     def set_data(self, data: Data):

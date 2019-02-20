@@ -14,7 +14,6 @@ from pyocf.types.volume import Volume, ErrorDevice
 from pyocf.types.ctx import get_default_ctx
 from pyocf.ocf import OcfLib
 
-
 def pytest_configure(config):
     sys.path.append(os.path.join(os.path.dirname(__file__), os.path.pardir))
 
@@ -24,10 +23,11 @@ def pyocf_ctx():
     c = get_default_ctx(DefaultLogger(LogLevel.WARN))
     c.register_volume_type(Volume)
     c.register_volume_type(ErrorDevice)
+
     yield c
     for cache in c.caches:
         cache.stop()
-    del c
+    c.exit()
 
 
 @pytest.fixture()

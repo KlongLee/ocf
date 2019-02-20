@@ -60,7 +60,6 @@ def test_simple_wt_write(pyocf_ctx):
     io.set_data(write_data)
     io.configure(20, write_data.size, IoDir.WRITE, 0, 0)
     io.submit()
-    del io
 
     assert cache_device.get_stats()[IoDir.WRITE] == 1
     stats = cache.get_stats()
@@ -73,14 +72,14 @@ def test_simple_wt_write(pyocf_ctx):
 def test_start_corrupted_metadata_lba(pyocf_ctx):
     cache_device = ErrorDevice(S.from_MiB(100), error_sectors=set([0]))
 
-    with pytest.raises(OcfError):
+    with pytest.raises(OcfError, match="OCF_ERR_WRITE_CACHE"):
         cache = Cache.start_on_device(cache_device)
 
 
 def test_load_cache_no_preexisting_data(pyocf_ctx):
     cache_device = Volume(S.from_MiB(100))
 
-    with pytest.raises(OcfError):
+    with pytest.raises(OcfError, match="OCF_ERR_START_CACHE_FAIL"):
         cache = Cache.load_from_device(cache_device)
 
 

@@ -4,19 +4,48 @@
 #
 
 from ctypes import *
-from enum import IntEnum
+from enum import IntEnum, auto
 
 from ..utils import Size as S
+
+
+class OcfErrorCode(IntEnum):
+	OCF_ERR_INVAL = 1000000
+	OCF_ERR_INVAL_VOLUME_TYPE = auto()
+	OCF_ERR_INTR = auto()
+	OCF_ERR_UNKNOWN = auto()
+	OCF_ERR_TOO_MANY_CACHES = auto()
+	OCF_ERR_NO_MEM = auto()
+	OCF_ERR_NO_FREE_RAM = auto()
+	OCF_ERR_START_CACHE_FAIL = auto()
+	OCF_ERR_CACHE_IN_USE = auto()
+	OCF_ERR_CACHE_NOT_EXIST = auto()
+	OCF_ERR_CACHE_EXIST = auto()
+	OCF_ERR_TOO_MANY_CORES = auto()
+	OCF_ERR_CORE_NOT_AVAIL = auto()
+	OCF_ERR_NOT_OPEN_EXC = auto()
+	OCF_ERR_CACHE_NOT_AVAIL = auto()
+	OCF_ERR_IO_CLASS_NOT_EXIST = auto()
+	OCF_ERR_WRITE_CACHE = auto()
+	OCF_ERR_WRITE_CORE = auto()
+	OCF_ERR_DIRTY_SHUTDOWN = auto()
+	OCF_ERR_DIRTY_EXISTS = auto()
+	OCF_ERR_FLUSHING_INTERRUPTED = auto()
+	OCF_ERR_CANNOT_ADD_CORE_TO_POOL = auto()
+	OCF_ERR_CACHE_IN_INCOMPLETE_STATE = auto()
+	OCF_ERR_CORE_IN_INACTIVE_STATE = auto()
+	OCF_ERR_INVALID_CACHE_MODE = auto()
+	OCF_ERR_INVALID_CACHE_LINE_SIZE = auto()
 
 
 class OcfError(BaseException):
     def __init__(self, msg, error_code):
         super().__init__(self, msg)
-        self.error_code = error_code
+        self.error_code = OcfErrorCode(abs(error_code))
         self.msg = msg
 
     def __str__(self):
-        return "{} ({})".format(self.msg, self.error_code)
+        return "{} ({})".format(self.msg, repr(self.error_code))
 
 
 class SharedOcfObject(Structure):

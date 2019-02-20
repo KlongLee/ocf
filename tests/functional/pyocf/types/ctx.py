@@ -73,8 +73,8 @@ class OcfCtx:
 
         self.volume_types_count += 1
 
-    def __del__(self):
-        self.lib.ocf_ctx_exit(self.ctx_handle)
+    def exit(self):
+        result = self.lib.ocf_ctx_exit(self.ctx_handle)
 
 
 def get_default_ctx(logger):
