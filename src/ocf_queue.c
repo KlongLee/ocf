@@ -39,7 +39,7 @@ static void ocf_init_queue(struct ocf_queue *q)
 	INIT_LIST_HEAD(&q->io_list);
 }
 
-int ocf_start_queues(struct ocf_cache *cache)
+int ocf_start_queues(ocf_cache_t cache)
 {
 	int id, result = 0;
 	struct ocf_queue *q;
@@ -63,17 +63,17 @@ int ocf_start_queues(struct ocf_cache *cache)
 	return result;
 }
 
-void ocf_stop_queues(struct ocf_cache *dev)
+void ocf_stop_queues(ocf_cache_t cache)
 {
 	int i;
 	struct ocf_queue *curr;
 
-	ocf_mngt_wait_for_io_finish(dev);
+	ocf_cache_wait_for_io_finish(cache);
 
 	/* Stop IO threads. */
-	for (i = 0 ; i < dev->io_queues_no; i++) {
-		curr = &dev->io_queues[i];
-		ctx_queue_stop(dev->owner, curr);
+	for (i = 0 ; i < cache->io_queues_no; i++) {
+		curr = &cache->io_queues[i];
+		ctx_queue_stop(cache->owner, curr);
 	}
 }
 
@@ -89,30 +89,35 @@ void ocf_io_handle(struct ocf_io *io, void *opaque)
 		req->io_if->read(req);
 }
 
-void ocf_queue_run(ocf_queue_t q)
+void ocf_queue_run_single(ocf_queue_t q)
 {
 	struct ocf_request *io_req = NULL;
 	struct ocf_cache *cache;
-	unsigned char step = 0;
 
 	OCF_CHECK_NULL(q);
 
 	cache = q->cache;
 
+	io_req = ocf_engine_pop_req(cache, q);
+
+	if (!io_req)
+		return;
+
+	if (io_req->io && io_req->io->handle)
+		io_req->io->handle(io_req->io, io_req);
+	else
+		ocf_io_handle(io_req->io, io_req);
+}
+
+void ocf_queue_run(ocf_queue_t q)
+{
+	unsigned char step = 0;
+
+	OCF_CHECK_NULL(q);
+
 	while (env_atomic_read(&q->io_no) > 0) {
-		/* Make sure a request is dequeued. */
-		io_req = ocf_engine_pop_req(cache, q);
+		ocf_queue_run_single(q);
 
-		if (!io_req)
-			continue;
-
-		if (io_req->io && io_req->io->handle)
-			io_req->io->handle(io_req->io, io_req);
-		else
-			ocf_io_handle(io_req->io, io_req);
-
-		/* Voluntary preemption every few requests.
-		 * Prevents soft-lockups if preemption is disabled */
 		OCF_COND_RESCHED(step, 128);
 	}
 }

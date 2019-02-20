@@ -5,7 +5,6 @@
 
 from ctypes import *
 from hashlib import md5
-from collections import defaultdict
 
 from .io import Io, IoOps, IoDir
 from .shared import OcfError

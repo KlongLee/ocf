@@ -39,3 +39,4 @@ def pyocf_ctx_log_buffer():
     yield logger
     for cache in c.caches:
         cache.stop()
+    c.exit()
