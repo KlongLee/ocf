@@ -63,6 +63,11 @@ void ocf_cache_wait_for_io_finish(ocf_cache_t cache)
 	} while (req_active);
 }
 
+bool ocf_cache_has_pending_requests(ocf_cache_t cache)
+{
+	return ocf_req_get_allocated(cache) > 0;
+}
+
 ocf_cache_mode_t ocf_cache_get_mode(ocf_cache_t cache)
 {
 	OCF_CHECK_NULL(cache);
