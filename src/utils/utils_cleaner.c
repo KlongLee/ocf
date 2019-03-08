@@ -193,7 +193,8 @@ static void _ocf_cleaner_complete_req(struct ocf_request *req)
 
 	/* Only master contains completion function and completion context */
 	cmpl = master->master_io_req;
-	cmpl(master->priv, master->error);
+	if (cmpl)
+		cmpl(master->priv, master->error);
 }
 
 /*
