@@ -5,6 +5,7 @@
 
 #include "cleaning.h"
 #include "alru.h"
+#include "nop.h"
 #include "acp.h"
 #include "../ocf_priv.h"
 #include "../ocf_cache_priv.h"
@@ -18,6 +19,7 @@
 struct cleaning_policy_ops cleaning_policy_ops[ocf_cleaning_max] = {
 	[ocf_cleaning_nop] = {
 		.name = "nop",
+		.perform_cleaning = cleaning_nop_perform_cleaning,
 	},
 	[ocf_cleaning_alru] = {
 		.setup = cleaning_policy_alru_setup,
@@ -110,7 +112,6 @@ static void ocf_cleaner_run_complete(ocf_cleaner_t cleaner, uint32_t interval)
 	cleaner->end(cleaner, interval);
 
 	ocf_queue_put(cleaner->io_queue);
-	cleaner->io_queue = NULL;
 }
 
 void ocf_cleaner_run(ocf_cleaner_t cleaner, ocf_queue_t queue)
@@ -150,9 +151,6 @@ void ocf_cleaner_run(ocf_cleaner_t cleaner, ocf_queue_t queue)
 	ocf_queue_get(queue);
 	cleaner->io_queue = queue;
 
-	/* Call cleaning. */
-	if (cleaning_policy_ops[clean_type].perform_cleaning) {
-		cleaning_policy_ops[clean_type].perform_cleaning(cache,
-				ocf_cleaner_run_complete);
-	}
+	cleaning_policy_ops[clean_type].perform_cleaning(cache,
+			ocf_cleaner_run_complete);
 }
