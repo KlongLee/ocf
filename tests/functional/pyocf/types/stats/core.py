@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 #
 
-from ctypes import *
+from ctypes import c_uint32, c_uint64, Structure
 
 from .shared import *
 
