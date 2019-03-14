@@ -695,6 +695,8 @@ int ocf_mngt_cache_cleaning_set_policy(ocf_cache_t cache, ocf_cleaning_t type)
 
 	ocf_metadata_unlock(cache, OCF_METADATA_WR);
 
+	ocf_kick_cleaner(cache);
+
 	ocf_cache_log(cache, log_info, "Changing cleaning policy from "
 			"%s to %s\n", cleaning_policy_ops[old_type].name,
 			cleaning_policy_ops[type].name);

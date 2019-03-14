@@ -9,6 +9,6 @@
 
 void cleaning_nop_perform_cleaning(ocf_cache_t cache, ocf_cleaner_end_t cmpl)
 {
-	uint32_t interval = SLEEP_TIME_MS;
+	uint32_t interval = SLEEP_TIME_MS_NOP;
 	cmpl(&cache->cleaner, interval);
 }

@@ -9,6 +9,8 @@
 #include "cleaning.h"
 #include "nop_structs.h"
 
+#define SLEEP_TIME_MS_NOP (1000*60*60)
+
 void cleaning_nop_perform_cleaning(ocf_cache_t cache, ocf_cleaner_end_t cmpl);
 
 #endif

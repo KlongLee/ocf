@@ -336,6 +336,7 @@ int cleaning_policy_acp_set_cleaning_param(ocf_cache_t cache,
 		config->thread_wakeup_time = param_value;
 		ocf_cache_log(cache, log_info, "Write-back flush thread "
 			"wake-up time: %d\n", config->thread_wakeup_time);
+		ocf_kick_cleaner(cache);
 		break;
 	case ocf_acp_flush_max_buffers:
 		OCF_CLEANING_CHECK_PARAM(cache, param_value,
