@@ -6,9 +6,10 @@
 from ctypes import *
 import logging
 from datetime import timedelta
+from ctypes import c_int
 
 from ..ocf import OcfLib
-from .shared import Uuid
+from .shared import Uuid, OcfCompletion
 from .volume import Volume
 from .data import Data
 from .io import Io, IoDir
@@ -55,7 +56,8 @@ class Core:
         self.cfg = CoreConfig(
             _uuid=Uuid(
                 _data=cast(
-                    create_string_buffer(self.device_name.encode("ascii")), c_char_p
+                    create_string_buffer(self.device_name.encode("ascii")),
+                    c_char_p,
                 ),
                 _size=len(self.device_name) + 1,
             ),
@@ -108,7 +110,9 @@ class Core:
             self.cache.put_and_unlock(True)
             raise OcfError("Failed collecting core stats", status)
 
-        status = self.cache.owner.lib.ocf_core_get_stats(self.handle, byref(core_stats))
+        status = self.cache.owner.lib.ocf_core_get_stats(
+            self.handle, byref(core_stats)
+        )
         if status:
             self.cache.put_and_unlock(True)
             raise OcfError("Failed getting core stats", status)
@@ -135,7 +139,15 @@ class Core:
         io.configure(0, read_buffer.size, IoDir.READ, 0, 0)
         io.set_data(read_buffer)
         io.set_queue(self.cache.get_default_queue())
+
+        cmpl = OcfCompletion([("err", c_int)])
+        io.callback = cmpl.callback
         io.submit()
+        cmpl.wait()
+
+        if cmpl.results["err"]:
+            raise Exception("Error reading whole exported object")
+
         return read_buffer.md5()
 
 

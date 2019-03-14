@@ -113,7 +113,9 @@ class DefaultLogger(Logger):
         self.level = level
 
         ch = logging.StreamHandler()
-        fmt = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        fmt = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
         ch.setFormatter(fmt)
         ch.setLevel(LevelMapping[level])
         logger.addHandler(ch)
@@ -128,7 +130,9 @@ class DefaultLogger(Logger):
 class FileLogger(Logger):
     def __init__(self, f, console_level=None):
         super().__init__()
-        fmt = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        fmt = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
 
         fh = logging.FileHandler(f)
         fh.setLevel(logging.DEBUG)

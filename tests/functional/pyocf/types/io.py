@@ -46,7 +46,9 @@ class Io(Structure):
     def from_pointer(cls, ref):
         c = cls.from_address(ref)
         cls._instances_[ref] = c
-        OcfLib.getInstance().ocf_io_set_cmpl_wrapper(byref(c), None, None, c.c_end)
+        OcfLib.getInstance().ocf_io_set_cmpl_wrapper(
+            byref(c), None, None, c.c_end
+        )
         return c
 
     @classmethod
@@ -78,8 +80,10 @@ class Io(Structure):
         Io.get_instance(io).handle(opaque)
 
     def end(self, err):
-        if err:
-            print("IO err {}".format(err))
+        try:
+            self.callback(err)
+        except:
+            pass
 
         self.put()
         self.del_object()

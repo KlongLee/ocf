@@ -8,7 +8,7 @@ from hashlib import md5
 from collections import defaultdict
 
 from .io import Io, IoOps, IoDir
-from .shared import OcfError
+from .shared import OcfError, OcfErrorCode, Uuid
 from ..ocf import OcfLib
 from ..utils import print_buffer, Size as S
 from .data import Data
@@ -66,7 +66,9 @@ class Volume(Structure):
         self.size = size
         if uuid:
             if uuid in type(self)._uuid_:
-                raise Exception("Volume with uuid {} already created".format(uuid))
+                raise Exception(
+                    "Volume with uuid {} already created".format(uuid)
+                )
             self.uuid = uuid
         else:
             self.uuid = str(id(self))
@@ -76,6 +78,7 @@ class Volume(Structure):
         self.data = create_string_buffer(int(self.size))
         self._storage = cast(self.data, c_void_p)
         self.reset_stats()
+        self.opened = False
 
     @classmethod
     def get_props(cls):
@@ -143,11 +146,10 @@ class Volume(Structure):
     @staticmethod
     @CFUNCTYPE(c_int, c_void_p)
     def _open(ref):
-        uuid_ptr = cast(OcfLib.getInstance().ocf_volume_get_uuid(ref), c_void_p)
-        uuid_str = cast(
-            OcfLib.getInstance().ocf_uuid_to_str_wrapper(uuid_ptr), c_char_p
+        uuid_ptr = cast(
+            OcfLib.getInstance().ocf_volume_get_uuid(ref), POINTER(Uuid)
         )
-        uuid = str(uuid_str.value, encoding="ascii")
+        uuid = str(uuid_ptr.contents._data, encoding="ascii")
         try:
             volume = Volume.get_by_uuid(uuid)
         except:
@@ -178,23 +180,31 @@ class Volume(Structure):
     @staticmethod
     @IoOps.SET_DATA
     def _io_set_data(io, data, offset):
-        io_priv = cast(OcfLib.getInstance().ocf_io_get_priv(io), POINTER(VolumeIoPriv))
+        io_priv = cast(
+            OcfLib.getInstance().ocf_io_get_priv(io), POINTER(VolumeIoPriv)
+        )
         data = Data.get_instance(data)
         data.position = offset
-        io_priv.contents._data = cast(data, c_void_p)
+        io_priv.contents._data = data.data
         return 0
 
     @staticmethod
     @IoOps.GET_DATA
     def _io_get_data(io):
-        io_priv = cast(OcfLib.getInstance().ocf_io_get_priv(io), POINTER(VolumeIoPriv))
+        io_priv = cast(
+            OcfLib.getInstance().ocf_io_get_priv(io), POINTER(VolumeIoPriv)
+        )
         return io_priv.contents._data
 
     def open(self):
+        if self.opened:
+            return OcfErrorCode.OCF_ERR_NOT_OPEN_EXC
+
+        self.opened = True
         return 0
 
     def close(self):
-        pass
+        self.opened = False
 
     def get_length(self):
         return self.size
@@ -213,7 +223,7 @@ class Volume(Structure):
 
     def submit_io(self, io):
         try:
-            self.stats[io.contents._dir] += 1
+            self.stats[IoDir(io.contents._dir)] += 1
             if io.contents._dir == IoDir.WRITE:
                 src_ptr = cast(io.contents._ops.contents._get_data(io), c_void_p)
                 src = Data.get_instance(src_ptr.value)
@@ -232,7 +242,9 @@ class Volume(Structure):
     def dump_contents(self, stop_after_zeros=0, offset=0, size=0):
         if size == 0:
             size = self.size
-        print_buffer(self._storage + offset, size, stop_after_zeros=stop_after_zeros)
+        print_buffer(
+            self._storage + offset, size, stop_after_zeros=stop_after_zeros
+        )
 
     def md5(self):
         m = md5()
@@ -258,3 +270,7 @@ class ErrorDevice(Volume):
     def reset_stats(self):
         super().reset_stats()
         self.stats["errors"] = {IoDir.WRITE: 0, IoDir.READ: 0}
+
+
+lib = OcfLib.getInstance()
+lib.ocf_io_get_priv.restype = POINTER(VolumeIoPriv)

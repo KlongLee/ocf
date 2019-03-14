@@ -150,7 +150,9 @@ class Data(SharedOcfObject):
     @staticmethod
     @DataOps.COPY
     def _copy(dst, src, end, start, size):
-        return Data.get_instance(dst).copy(Data.get_instance(src), end, start, size)
+        return Data.get_instance(dst).copy(
+            Data.get_instance(src), end, start, size
+        )
 
     @staticmethod
     @DataOps.SECURE_ERASE
