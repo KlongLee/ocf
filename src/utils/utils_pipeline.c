@@ -120,6 +120,7 @@ void ocf_pipeline_next(ocf_pipeline_t pipeline)
 
 void ocf_pipeline_repeat(ocf_pipeline_t pipeline)
 {
+	ENV_BUG_ON(pipeline->next_step == 0);
 	--pipeline->next_step;
 	pipeline->next_arg = 0;
 	ocf_engine_push_req_front(pipeline->req, true);
