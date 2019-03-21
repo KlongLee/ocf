@@ -129,6 +129,8 @@ void ocf_pipeline_destroy(ocf_pipeline_t pipeline);
 
 void ocf_pipeline_next(ocf_pipeline_t pipeline);
 
+void ocf_pipeline_repeat(ocf_pipeline_t pipeline);
+
 void ocf_pipeline_finish(ocf_pipeline_t pipeline, int error);
 
 #endif /* __UTILS_PIPELINE_H__ */
