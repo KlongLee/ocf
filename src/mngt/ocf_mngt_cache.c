@@ -405,7 +405,10 @@ static int _ocf_mngt_init_instance_add_cores(
 			 * Attach bottom device to core structure
 			 * in cache
 			 */
-			ocf_volume_move(&core->volume, tvolume);
+			ret = ocf_volume_move(&core->volume, tvolume);
+			if (ret)
+				goto err;
+
 			ocf_mngt_core_pool_remove(cache->owner, tvolume);
 
 			core->opened = true;

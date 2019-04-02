@@ -33,7 +33,7 @@ int ocf_volume_type_init(struct ocf_volume_type **type,
 
 void ocf_volume_type_deinit(struct ocf_volume_type *type);
 
-void ocf_volume_move(ocf_volume_t volume, ocf_volume_t from);
+int ocf_volume_move(ocf_volume_t volume, ocf_volume_t from);
 
 void ocf_volume_set_uuid(ocf_volume_t volume,
 		const struct ocf_volume_uuid *uuid);

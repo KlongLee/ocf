@@ -123,8 +123,10 @@ void ocf_volume_deinit(ocf_volume_t volume)
 		env_vfree(volume->uuid.data);
 }
 
-void ocf_volume_move(ocf_volume_t volume, ocf_volume_t from)
+int ocf_volume_move(ocf_volume_t volume, ocf_volume_t from)
 {
+	int ret = 0;
+
 	OCF_CHECK_NULL(volume);
 	OCF_CHECK_NULL(from);
 
@@ -132,8 +134,27 @@ void ocf_volume_move(ocf_volume_t volume, ocf_volume_t from)
 
 	volume->opened = from->opened;
 	volume->type = from->type;
-	volume->uuid = from->uuid;
+
+	if (from->uuid_copy){
+		// There is a chance that uuid will be freed, needs to be copied.
+		volume->uuid.data = env_vmalloc(from->uuid.size);
+		if (!volume->uuid.data)
+			return -ENOMEM;
+
+		ret = env_memcpy((void *)volume->uuid.data, from->uuid.size,
+				 (void *)from->uuid.data, from->uuid.size);
+		if (ret) {
+			env_vfree(volume->uuid.data);
+			return ret;
+		}
+
+	} else {
+		volume->uuid.data = from->uuid.data;
+	}
+
+	volume->uuid.size = from->uuid.size;
 	volume->uuid_copy = from->uuid_copy;
+
 	volume->priv = from->priv;
 	volume->cache = from->cache;
 	volume->features = from->features;
@@ -143,6 +164,8 @@ void ocf_volume_move(ocf_volume_t volume, ocf_volume_t from)
 	 */
 	from->opened = false;
 	from->priv = NULL;
+
+	return ret;
 }
 
 int ocf_volume_create(ocf_volume_t *volume, ocf_volume_type_t type,
