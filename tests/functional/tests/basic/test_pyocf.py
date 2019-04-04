@@ -6,13 +6,13 @@
 import pytest
 from ctypes import c_int
 
-from pyocf.types.cache import Cache
-from pyocf.types.core import Core
-from pyocf.types.volume import Volume, ErrorDevice
-from pyocf.types.data import Data
-from pyocf.types.io import IoDir
-from pyocf.utils import Size as S
-from pyocf.types.shared import OcfError, OcfCompletion
+from ...pyocf.types.cache import Cache
+from ...pyocf.types.core import Core
+from ...pyocf.types.volume import Volume, ErrorDevice
+from ...pyocf.types.data import Data
+from ...pyocf.types.io import IoDir
+from ...pyocf.utils import Size as S
+from ...pyocf.types.shared import OcfError, OcfCompletion
 
 
 def test_ctx_fixture(pyocf_ctx):

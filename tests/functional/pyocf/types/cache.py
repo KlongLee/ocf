@@ -223,7 +223,6 @@ class Cache:
     @classmethod
     def start_on_device(cls, device, **kwargs):
         c = cls(locked=True, owner=device.owner, **kwargs)
-
         c.start_cache()
         try:
             c.attach_device(device, force=True)
@@ -431,6 +430,12 @@ class Cache:
             raise OcfError("Couldn't get cache name")
         finally:
             self.put_and_read_unlock()
+
+
+    def change_cache_mode(self, cache_mode: CacheMode):
+        # TODO: implement change cache mode method
+        pass
+
 
 lib = OcfLib.getInstance()
 lib.ocf_mngt_cache_remove_core.argtypes = [c_void_p, c_void_p, c_void_p]
