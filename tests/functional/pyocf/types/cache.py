@@ -235,7 +235,6 @@ class Cache:
     @classmethod
     def start_on_device(cls, device, **kwargs):
         c = cls(locked=True, owner=device.owner, **kwargs)
-
         c.start_cache()
         try:
             c.attach_device(device, force=True)
