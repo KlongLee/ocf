@@ -235,6 +235,14 @@ void ocf_core_submit_io_mode(struct ocf_io *io, ocf_cache_mode_t cache_mode)
 	core = ocf_volume_to_core(io->volume);
 	cache = ocf_core_get_cache(core);
 
+	/* Core volume I/O must not be queued on management queue - this would
+	 * break I/O accounting code, resulting in use-after-free type of errors
+	 * after cache detach, core remove etc. */
+	if (io->io_queue == cache->mngt_queue) {
+		ocf_io_end(io, -OCF_ERR_INVALID_QUEUE);
+		return;
+	}
+
 	ocf_trace_init_io(core_io, cache);
 
 	if (unlikely(!env_bit_test(ocf_cache_state_running,
@@ -309,6 +317,11 @@ int ocf_core_submit_io_fast(struct ocf_io *io)
 
 	core = ocf_volume_to_core(io->volume);
 	cache = ocf_core_get_cache(core);
+
+	if (io->io_queue == cache->mngt_queue) {
+		ocf_io_end(io, -OCF_ERR_INVALID_QUEUE);
+		return 0 ;
+	}
 
 	if (unlikely(!env_bit_test(ocf_cache_state_running,
 			&cache->cache_state))) {
@@ -409,6 +422,11 @@ static void ocf_core_volume_submit_flush(struct ocf_io *io)
 	core = ocf_volume_to_core(io->volume);
 	cache = ocf_core_get_cache(core);
 
+	if (io->io_queue == cache->mngt_queue) {
+		ocf_io_end(io, -OCF_ERR_INVALID_QUEUE);
+		return;
+	}
+
 	if (unlikely(!env_bit_test(ocf_cache_state_running,
 			&cache->cache_state))) {
 		ocf_io_end(io, -EIO);
@@ -450,6 +468,11 @@ static void ocf_core_volume_submit_discard(struct ocf_io *io)
 
 	core = ocf_volume_to_core(io->volume);
 	cache = ocf_core_get_cache(core);
+
+	if (io->io_queue == cache->mngt_queue) {
+		ocf_io_end(io, -OCF_ERR_INVALID_QUEUE);
+		return;
+	}
 
 	if (unlikely(!env_bit_test(ocf_cache_state_running,
 			&cache->cache_state))) {
