@@ -16,11 +16,12 @@ from ctypes import (
     Structure,
     c_int,
     memmove,
+    byref,
 )
 from enum import IntEnum
 from hashlib import md5
+import weakref
 
-from .shared import SharedOcfObject
 from ..utils import print_buffer
 
 
@@ -55,23 +56,24 @@ class DataOps(Structure):
     ]
 
 
-class Data(SharedOcfObject):
+class Data:
     PAGE_SIZE = 4096
 
     _instances_ = {}
-
-    _fields_ = [("data", c_void_p)]
+    _ocf_instances_ = []
 
     def __init__(self, byte_count: int):
-        self.size = byte_count
+        self.size = int(byte_count)
         self.position = 0
         self.buffer = create_string_buffer(int(self.size))
-        self.data = cast(self.buffer, c_void_p)
-        memset(self.data, 0, self.size)
-        type(self)._instances_[self.data] = self
-        self._as_parameter_ = self.data
+        self.handle = cast(byref(self.buffer), c_void_p)
+        memset(self.handle, 0, self.size)
+        type(self)._instances_[self.handle.value] = weakref.ref(self)
+        self._as_parameter_ = self.handle
 
-        super().__init__()
+    @classmethod
+    def get_instance(cls, ref):
+        return cls._instances_[ref]()
 
     @classmethod
     def get_ops(cls):
@@ -96,7 +98,7 @@ class Data(SharedOcfObject):
     def from_bytes(cls, source: bytes):
         d = cls(len(source))
 
-        memmove(d.data, cast(source, c_void_p), len(source))
+        memmove(d.handle, cast(source, c_void_p), len(source))
 
         return d
 
@@ -104,31 +106,25 @@ class Data(SharedOcfObject):
     def from_string(cls, source: str, encoding: str = "ascii"):
         return cls.from_bytes(bytes(source, encoding))
 
-    def __str__(self):
-        char_array = cast(self.data, c_char_p)
-        return str(char_array.value, "ascii")
-
-    def __wstr__(self):
-        char_array = cast(self.data, c_wchar_p)
-        return str(char_array.value, "utf-8")
-
     def set_data(self, contents):
         if len(contents) > self.size:
             raise Exception("Data too big to fit into allocated buffer")
 
-        memmove(self.data, cast(contents, c_void_p), len(contents))
+        memmove(self.handle, cast(contents, c_void_p), len(contents))
         self.position = 0
 
     @staticmethod
     @DataOps.ALLOC
     def _alloc(pages):
         data = Data.pages(pages)
-        return data.data
+        Data._ocf_instances_.append(data)
+
+        return data.handle.value
 
     @staticmethod
     @DataOps.FREE
-    def _free(data):
-        Data.del_object(data)
+    def _free(ref):
+        Data._ocf_instances_.remove(Data.get_instance(ref))
 
     @staticmethod
     @DataOps.MLOCK
@@ -174,12 +170,12 @@ class Data(SharedOcfObject):
 
     def read(self, dst, size):
         to_read = min(self.size - self.position, size)
-        memmove(dst, self.data + self.position, to_read)
+        memmove(dst, self.handle.value + self.position, to_read)
         return to_read
 
     def write(self, src, size):
         to_write = min(self.size - self.position, size)
-        memmove(self.data + self.position, src, to_write)
+        memmove(self.handle.value + self.position, src, to_write)
         return to_write
 
     def mlock(self):
@@ -190,7 +186,7 @@ class Data(SharedOcfObject):
 
     def zero(self, size):
         to_zero = min(self.size - self.position, size)
-        memset(self.data + self.position, 0, to_zero)
+        memset(self.handle.value + self.position, 0, to_zero)
         return to_zero
 
     def seek(self, seek, size):
@@ -204,7 +200,10 @@ class Data(SharedOcfObject):
         return to_move
 
     def copy(self, src, end, start, size):
-        return size
+        to_write = min(self.size, size, src.size)
+
+        memmove(self.handle, src.handle, to_write)
+        return to_write
 
     def secure_erase(self):
         pass
@@ -214,5 +213,5 @@ class Data(SharedOcfObject):
 
     def md5(self):
         m = md5()
-        m.update(string_at(self.data, self.size))
+        m.update(string_at(self.handle, self.size))
         return m.hexdigest()
