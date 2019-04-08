@@ -4,11 +4,9 @@
 #
 
 from ctypes import c_void_p, Structure, c_char_p, cast, pointer, byref
-from enum import IntEnum
 
-from .logger import LoggerOps, Logger
+from .logger import LoggerOps
 from .data import DataOps, Data
-from .queue import Queue
 from .cleaner import CleanerOps, Cleaner
 from .metadata_updater import MetadataUpdaterOps, MetadataUpdater
 from .shared import OcfError

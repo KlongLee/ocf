@@ -134,16 +134,17 @@ class Cache:
         self.cache_handle = c_void_p()
         self._as_parameter_ = self.cache_handle
         self.io_queues = []
+        self.device = None
 
     def start_cache(
-        self, default_io_queue: Queue = None, mngt_queue: Queue = None,
+        self, default_io_queue: Queue = None, mngt_queue: Queue = None
     ):
         status = self.owner.lib.ocf_mngt_cache_start(
             self.owner.ctx_handle, byref(self.cache_handle), byref(self.cfg)
         )
         if status:
             raise OcfError("Creating cache instance failed", status)
-        self.owner.caches += [self]
+        self.owner.caches.append(self)
 
         self.mngt_queue = mngt_queue or Queue(
             self, "mgmt-{}".format(self.get_name()), mngt_queue=True
@@ -152,7 +153,9 @@ class Cache:
         if default_io_queue:
             self.io_queues += [default_io_queue]
         else:
-            self.io_queues += [Queue(self, "default-io-{}".format(self.get_name()))]
+            self.io_queues += [
+                Queue(self, "default-io-{}".format(self.get_name()))
+            ]
 
         status = self.owner.lib.ocf_mngt_cache_set_mngt_queue(
             self, self.mngt_queue
@@ -215,6 +218,7 @@ class Cache:
     @classmethod
     def load_from_device(cls, device, name=""):
         c = cls(name=name, owner=device.owner)
+        c.device = device
 
         c.start_cache()
         c.load_cache(device)
@@ -223,12 +227,13 @@ class Cache:
     @classmethod
     def start_on_device(cls, device, **kwargs):
         c = cls(locked=True, owner=device.owner, **kwargs)
+        c.device = device
 
         c.start_cache()
         try:
             c.attach_device(device, force=True)
         except:
-            c.stop(flush=False)
+            c.stop()
             raise
 
         return c
@@ -296,16 +301,9 @@ class Cache:
     def remove_core(self, core: Core):
         self.get_and_write_lock()
 
-        c = OcfCompletion(
-            [
-                ("priv", c_void_p),
-                ("error", c_int),
-            ]
-        )
+        c = OcfCompletion([("priv", c_void_p), ("error", c_int)])
 
-        self.owner.lib.ocf_mngt_cache_remove_core(
-            core.handle, c, None
-        )
+        self.owner.lib.ocf_mngt_cache_remove_core(core.handle, c, None)
 
         c.wait()
         if c.results["error"]:
@@ -388,10 +386,7 @@ class Cache:
 
         return self.io_queues[0]
 
-    def stop(self, flush: bool = True):
-        if flush:
-            self.flush()
-
+    def stop(self):
         self.get_and_write_lock()
 
         c = OcfCompletion(
@@ -405,7 +400,13 @@ class Cache:
             self.put_and_write_unlock()
             raise OcfError("Failed stopping cache", c.results["error"])
 
+        self.mngt_queue.stop()
+        self.mngt_queue = None
+        del self.io_queues[:]
+        self.device = None
+
         self.put_and_write_unlock()
+
         self.owner.caches.remove(self)
 
     def flush(self):
@@ -431,6 +432,7 @@ class Cache:
             raise OcfError("Couldn't get cache name")
         finally:
             self.put_and_read_unlock()
+
 
 lib = OcfLib.getInstance()
 lib.ocf_mngt_cache_remove_core.argtypes = [c_void_p, c_void_p, c_void_p]
