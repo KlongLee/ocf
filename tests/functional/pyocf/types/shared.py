@@ -58,6 +58,7 @@ class OcfCompletion:
         self.e = Event()
         self.completion_args = completion_args
         self._as_parameter_ = self.callback
+        self.results = None
 
     @property
     def callback(self):

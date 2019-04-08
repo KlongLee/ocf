@@ -383,6 +383,7 @@ class Cache:
                 "core_count": cache_info.core_count,
                 "metadata_footprint": Size(cache_info.metadata_footprint),
                 "metadata_end_offset": Size(cache_info.metadata_end_offset),
+                "cache_id": self.owner.lib.ocf_cache_get_id(self),
             },
             "block": struct_to_dict(block),
             "req": struct_to_dict(req),

@@ -60,6 +60,7 @@ class Core:
         seq_cutoff_threshold: int = DEFAULT_SEQ_CUTOFF_THRESHOLD,
     ):
 
+        self.cache = None
         self.device = device
         self.device_name = device.uuid
         self.core_id = core_id
