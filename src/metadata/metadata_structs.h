@@ -11,6 +11,7 @@
 #include "../cleaning/cleaning.h"
 #include "../ocf_request.h"
 
+
 /**
  * @file metadata_priv.h
  * @brief Metadata private structures
@@ -81,6 +82,9 @@ struct ocf_metadata_layout_iface {
 			ocf_cache_line_t phy);
 };
 
+typedef void (*ocf_metadata_query_cores_end_t)(void *priv, int error,
+		unsigned int num_cores);
+
 /**
  * OCF Metadata interface
  */
@@ -95,6 +99,9 @@ struct ocf_metadata_iface {
 	int (*init)(struct ocf_cache *cache,
 			ocf_cache_line_size_t cache_line_size);
 
+	void (*query_cores)(ocf_ctx_t owner, ocf_volume_t volume,
+		struct ocf_volume_uuid *uuid, uint32_t count,
+		ocf_metadata_query_cores_end_t cmpl, void *priv);
 	/**
 	 * @brief Initialize variable size metadata sections
 	 *
