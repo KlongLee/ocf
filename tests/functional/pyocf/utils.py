@@ -15,7 +15,6 @@ def print_buffer(buf, length, offset=0, width=16, stop_after_zeros=0):
 
     for addr in range(offset, end, width):
         cur_line = buf[addr : min(end, addr + width)]
-        all_zeros = True
         byteline = ""
         asciiline = ""
         if not any(cur_line):
@@ -138,3 +137,4 @@ def struct_to_dict(struct):
         d[field] = value
 
     return d
+
