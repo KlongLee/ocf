@@ -44,7 +44,7 @@ def generate_random_strings():
               string.punctuation,
               string.hexdigits]:
         for i in range(0, 100):
-            values.append(''.join(random.choice(t) for _ in range(random.randint(0, 20))))
+            values.append(''.join(random.choice(t) for _ in range(random.randint(0, 50))))
     return values
 
 
