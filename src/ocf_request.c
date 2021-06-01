@@ -46,7 +46,7 @@ static inline size_t ocf_req_sizeof_map(struct ocf_request *req)
 int ocf_req_allocator_init(struct ocf_ctx *ocf_ctx)
 {
 	ocf_ctx->resources.req = env_mpool_create(sizeof(struct ocf_request),
-		sizeof(struct ocf_map_info), ENV_MEM_NORMAL, ocf_req_size_128,
+		sizeof(struct ocf_map_info) + sizeof(uint8_t), ENV_MEM_NORMAL, ocf_req_size_128,
 		false, NULL, "ocf_req");
 
 	if (ocf_ctx->resources.req == NULL)
@@ -90,6 +90,7 @@ struct ocf_request *ocf_req_new(ocf_queue_t queue, ocf_core_t core,
 
 	if (map_allocated) {
 		req->map = req->__map;
+		req->alock_entry_map = &req->__map[core_line_count];
 		req->alloc_core_line_count = core_line_count;
 	} else {
 		req->alloc_core_line_count = 1;
@@ -133,6 +134,13 @@ int ocf_req_alloc_map(struct ocf_request *req)
 
 	req->map = env_zalloc(ocf_req_sizeof_map(req), ENV_MEM_NOIO);
 	if (!req->map) {
+		req->error = -OCF_ERR_NO_MEM;
+		return -OCF_ERR_NO_MEM;
+	}
+
+	req->alock_entry_map = env_zalloc(req->core_line_count * sizeof(uint8_t), ENV_MEM_NOIO);
+	if (!req->alock_entry_map) {
+		env_free(req->map);
 		req->error = -OCF_ERR_NO_MEM;
 		return -OCF_ERR_NO_MEM;
 	}
@@ -207,6 +215,9 @@ void ocf_req_put(struct ocf_request *req)
 
 	if (!req->d2c && req->io_queue != req->cache->mngt_queue)
 		ocf_refcnt_dec(&req->cache->refcnt.metadata);
+
+	if (req->alock_entry_map != &req->__map[req->core_line_count])
+		env_free(req->alock_entry_map);
 
 	if (req->map != req->__map)
 		env_free(req->map);
