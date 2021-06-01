@@ -127,40 +127,56 @@ void __wrap_ocf_alock_is_index_locked(struct ocf_alock *alock,
 	__real_ocf_alock_is_index_locked(alock, req, index);
 }
 
+/* For some (unknown) reason building the unit tests under GCC 9.3.1
+ * results in two extra assembly commands which touch the EAX register,
+ * rather than returning the value as is, if the '== true' isn't present:
+ *
+ * test   %eax,%eax
+ * setne  %al
+ *
+ * This means that if the alloc access originally had the value
+ * OCF_CACHE_LINE_ACCESS_WR (0x7fffffff), then eax will have
+ * 0x7fffff00 if a given __real_ function was supposed to return false
+ * (the least significant byte is clear). But the above instructions
+ * will execute on the whole eax register, instead of just the al part
+ * and will switch false to true. This only seems to happen for the
+ * request locks (i.e. not the singular cache line locks).
+ */
+
 bool __wrap_ocf_alock_lock_one_wr(struct ocf_alock *alock,
 		  const ocf_cache_line_t entry, ocf_req_async_lock_cb cmpl,
 		  void *req, uint32_t idx)
 {
 	usleep(rand() % 100);
-	return __real_ocf_alock_lock_one_wr(alock, entry, cmpl, req, idx);
+	return __real_ocf_alock_lock_one_wr(alock, entry, cmpl, req, idx) == true;
 }
 
 bool __wrap_ocf_alock_trylock_entry_rd_idle(struct ocf_alock *alock,
 		  ocf_cache_line_t entry)
 {
-	return __real_ocf_alock_trylock_entry_rd_idle(alock, entry);
+	return __real_ocf_alock_trylock_entry_rd_idle(alock, entry) == true;
 }
 
 bool __wrap_ocf_alock_lock_one_rd(struct ocf_alock *alock, const ocf_cache_line_t entry, ocf_req_async_lock_cb cmpl,
        void *req, uint32_t idx)
 {
 	usleep(rand() % 100);
-	return __real_ocf_alock_lock_one_rd(alock, entry, cmpl, req, idx);
+	return __real_ocf_alock_lock_one_rd(alock, entry, cmpl, req, idx) == true;
 }
 
 bool __wrap_ocf_alock_waitlist_is_empty(struct ocf_alock *alock, ocf_cache_line_t entry)
 {
-	return __real_ocf_alock_waitlist_is_empty(alock, entry);
+	return __real_ocf_alock_waitlist_is_empty(alock, entry) == true;
 }
 
 bool __wrap_ocf_alock_trylock_one_rd(struct ocf_alock *alock, ocf_cache_line_t entry)
 {
-	return __real_ocf_alock_trylock_one_rd(alock, entry);
+	return __real_ocf_alock_trylock_one_rd(alock, entry) == true;
 }
 
 bool __wrap_ocf_alock_trylock_entry_wr(struct ocf_alock *alock, ocf_cache_line_t entry)
 {
-	return __real_ocf_alock_trylock_entry_wr(alock, entry);
+	return __real_ocf_alock_trylock_entry_wr(alock, entry) == true;
 }
 
 void __wrap___assert_fail (const char *__assertion, const char *__file,

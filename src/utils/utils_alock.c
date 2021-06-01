@@ -15,8 +15,8 @@
 	ocf_cache_log(cache, log_info, "[Concurrency][Cache] %s\n", __func__)
 
 #define OCF_DEBUG_RQ(req, format, ...) \
-	ocf_cache_log(req->cache, log_info, "[Concurrency][Cache][%s] %s - " \
-			format"\n", OCF_READ == (req)->rw ? "RD" : "WR", \
+	ocf_cache_log(req->cache, log_info, "[Concurrency][Cache][%s][%p] %s - " \
+			format"\n", OCF_READ == (req)->rw ? "RD" : "WR", req, \
 			__func__, ##__VA_ARGS__)
 
 #define OCF_DEBUG_CACHE(cache, format, ...) \
@@ -267,10 +267,7 @@ bool ocf_alock_trylock_entry_wr(struct ocf_alock *alock,
 	int prev = env_atomic_cmpxchg(access, OCF_CACHE_LINE_ACCESS_IDLE,
 			OCF_CACHE_LINE_ACCESS_WR);
 
-	if (prev == OCF_CACHE_LINE_ACCESS_IDLE)
-		return true;
-	else
-		return false;
+	return prev == OCF_CACHE_LINE_ACCESS_IDLE;
 }
 
 bool ocf_alock_trylock_entry_rd_idle(struct ocf_alock *alock,
