@@ -39,6 +39,11 @@
  *  _ocf_req_trylock_wr
  *  _req_on_lock
  *  ocf_cache_line_are_waiters
+ *  ocf_cl_lock_line_needs_lock
+ *  ocf_cl_lock_line_get_entry
+ *  ocf_cl_lock_line_is_acting
+ *  ocf_cl_lock_line_slow
+ *  ocf_cl_lock_line_fast
  * </functions_to_leave>
  */
 
@@ -64,7 +69,99 @@
 
 #include "concurrency/ocf_cache_line_concurrency.c/ocf_cache_line_concurrency_generated_wraps.c"
 
+#include "../utils/utils_alock.c"
+
 #define LOCK_WAIT_TIMEOUT 5
+
+int __wrap_ocf_alock_init(struct ocf_alock **self, unsigned num_entries,
+  const char* name, struct ocf_alock_lock_cbs *cbs, ocf_cache_t cache)
+{
+	return __real_ocf_alock_init(self, num_entries, name, cbs, cache);
+}
+
+void __wrap_ocf_alock_waitlist_remove_entry(struct ocf_alock *alock,
+ struct ocf_request *req, ocf_cache_line_t entry, int i, int rw)
+{
+	__real_ocf_alock_waitlist_remove_entry(alock, req, entry, i, rw);
+}
+
+void __wrap_ocf_alock_deinit(struct ocf_alock **self)
+{
+	__real_ocf_alock_deinit(self);
+}
+
+void __wrap_ocf_alock_mark_index_locked(struct ocf_alock *alock,
+  struct ocf_request *req, unsigned index, _Bool locked)
+{
+	__real_ocf_alock_mark_index_locked(alock, req, index, locked);
+}
+
+void __wrap_ocf_alock_unlock_one_wr(struct ocf_alock *alock,
+  const ocf_cache_line_t entry_idx)
+{
+	__real_ocf_alock_unlock_one_wr(alock, entry_idx);
+}
+
+int __wrap_ocf_alock_lock_wr(struct ocf_alock *alock,
+  struct ocf_request *req, ocf_req_async_lock_cb cmpl)
+{
+	return __real_ocf_alock_lock_wr(alock, req, cmpl);
+}
+
+int __wrap_ocf_alock_lock_rd(struct ocf_alock *alock,
+  struct ocf_request *req, ocf_req_async_lock_cb cmpl)
+{
+	return __real_ocf_alock_lock_rd(alock, req, cmpl);
+}
+
+
+void __wrap_ocf_alock_unlock_one_rd(struct ocf_alock *alock,
+  const ocf_cache_line_t entry)
+{
+	__real_ocf_alock_unlock_one_rd(alock, entry);
+}
+
+void __wrap_ocf_alock_is_index_locked(struct ocf_alock *alock,
+		  struct ocf_request *req, unsigned index)
+{
+	__real_ocf_alock_is_index_locked(alock, req, index);
+}
+
+bool __wrap_ocf_alock_lock_one_wr(struct ocf_alock *alock,
+		  const ocf_cache_line_t entry, ocf_req_async_lock_cb cmpl,
+		  void *req, uint32_t idx)
+{
+	usleep(rand() % 100);
+	return __real_ocf_alock_lock_one_wr(alock, entry, cmpl, req, idx);
+}
+
+bool __wrap_ocf_alock_trylock_entry_rd_idle(struct ocf_alock *alock,
+		  ocf_cache_line_t entry)
+{
+	return __real_ocf_alock_trylock_entry_rd_idle(alock, entry);
+}
+
+bool __wrap_ocf_alock_lock_one_rd(struct ocf_alock *alock, const ocf_cache_line_t entry, ocf_req_async_lock_cb cmpl,
+       void *req, uint32_t idx)
+{
+	usleep(rand() % 100);
+	return __real_ocf_alock_lock_one_rd(alock, entry, cmpl, req, idx);
+}
+
+bool __wrap_ocf_alock_waitlist_is_empty(struct ocf_alock *alock, ocf_cache_line_t entry)
+{
+	return __real_ocf_alock_waitlist_is_empty(alock, entry);
+}
+
+bool __wrap_ocf_alock_trylock_one_rd(struct ocf_alock *alock, ocf_cache_line_t entry)
+{
+	return __real_ocf_alock_trylock_one_rd(alock, entry);
+}
+
+bool __wrap_ocf_alock_trylock_entry_wr(struct ocf_alock *alock, ocf_cache_line_t entry)
+{
+	return __real_ocf_alock_trylock_entry_wr(alock, entry);
+}
 
 void __wrap___assert_fail (const char *__assertion, const char *__file,
       unsigned int __line, const char *__function)
@@ -125,32 +222,14 @@ int __wrap_snprintf (char *__restrict __s, size_t __maxlen,
 	return ret;
 }
 
-static inline bool __wrap___lock_cache_line_wr(struct ocf_cache_line_concurrency *c,
-                const ocf_cache_line_t line, ocf_req_async_lock_cb cb,
-                void *ctx, uint32_t ctx_id)
+ocf_ctx_t ocf_cache_get_ctx(ocf_cache_t cache)
 {
-	usleep(rand() % 100);
-	return __real___lock_cache_line_wr(c, line, cb, ctx, ctx_id);
+	return NULL;
 }
 
-static inline bool __wrap___lock_cache_line_rd(struct ocf_cache_line_concurrency *c,
-                const ocf_cache_line_t line, ocf_req_async_lock_cb cb,
-                void *ctx, uint32_t ctx_id)
+int __wrap_ocf_log_raw(ocf_logger_t logger, ocf_logger_lvl_t lvl, const char *fmt, ...)
 {
-	usleep(rand() % 100);
-	return __real___lock_cache_line_rd(c, line, cb, ctx, ctx_id);
-}
-
-int __wrap__ocf_req_lock_wr(struct ocf_request *req, ocf_req_async_lock_cb cb)
-{
-	usleep(rand() % 500);
-	return __real__ocf_req_lock_wr(req, cb);
-}
-
-int __wrap__ocf_req_lock_rd(struct ocf_request *req, ocf_req_async_lock_cb cb)
-{
-	usleep(rand() % 500);
-	return __real__ocf_req_lock_wr(req, cb);
+	function_called();
 }
 
 unsigned long long progress;
@@ -160,6 +239,7 @@ pthread_mutex_t prog_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct test_req {
 	struct ocf_request r;
 	struct ocf_map_info map[TEST_MAX_MAP_SIZE];
+	uint8_t alock_map[TEST_MAX_MAP_SIZE];
 	pthread_cond_t completion;
 	pthread_mutex_t completion_mutex;
 	bool finished;
@@ -249,6 +329,7 @@ void thread(void *_ctx)
 	bool locked;
 
 	ctx->treq.r.map = &ctx->treq.map;
+	ctx->treq.r.alock_entry_map = &ctx->treq.alock_map;
 	pthread_cond_init(&ctx->treq.completion, NULL);
 	pthread_mutex_init(&ctx->treq.completion_mutex, NULL);
 
