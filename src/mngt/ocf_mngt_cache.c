@@ -187,7 +187,7 @@ static void __init_user_parts_attached(ocf_cache_t cache)
 	ocf_part_id_t part_id;
 
 	for (part_id = 0; part_id < OCF_USER_IO_CLASS_MAX; part_id++) {
-		part = &cache->user_parts[part_id].part;
+		part = &cache->parts[part_id];
 
 		part->runtime->head = cache->device->collision_table_entries;
 		part->runtime->curr_size = 0;

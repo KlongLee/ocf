@@ -576,9 +576,9 @@ static int ocf_metadata_init_fixed_size(struct ocf_cache *cache,
 	for (i = 0; i < OCF_USER_IO_CLASS_MAX + 1; i++) {
 		cache->user_parts[i].config = &part_config[i];
 		cache->user_parts[i].clean_pol = &part_runtime_meta[i].clean_pol;
-		cache->user_parts[i].part.runtime =
-			&part_runtime_meta[i].runtime;
-		cache->user_parts[i].part.id = i;
+		cache->user_parts[i].part = &cache->parts[i];
+		cache->parts[i].runtime = &part_runtime_meta[i].runtime;
+		cache->parts[i].id = i;
 	}
 
 	/* Set core metadata */

@@ -82,7 +82,7 @@ struct ocf_part {
 struct ocf_user_part {
 	struct ocf_user_part_config *config;
 	struct cleaning_policy *clean_pol;
-	struct ocf_part part;
+	struct ocf_part *part;
 	struct ocf_part_cleaning_ctx cleaning;
 	struct ocf_lst_entry lst_valid;
 };

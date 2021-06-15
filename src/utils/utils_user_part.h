@@ -103,7 +103,7 @@ static inline bool ocf_user_part_is_enabled(struct ocf_user_part *user_part)
 static inline uint32_t ocf_user_part_overflow_size(struct ocf_cache *cache,
 		struct ocf_user_part *user_part)
 {
-	uint32_t part_occupancy = ocf_part_get_occupancy(&user_part->part);
+	uint32_t part_occupancy = ocf_part_get_occupancy(user_part->part);
 	uint32_t part_occupancy_limit = ocf_user_part_get_max_size(cache,
 			user_part);
 
@@ -120,7 +120,7 @@ static inline bool ocf_user_part_has_space(struct ocf_request *req)
 		ocf_user_part_get_max_size(req->cache, user_part);
 	uint64_t needed_cache_lines = ocf_engine_repart_count(req) +
 		ocf_engine_unmapped_count(req);
-	uint64_t part_occupancy = ocf_part_get_occupancy(&user_part->part);
+	uint64_t part_occupancy = ocf_part_get_occupancy(user_part->part);
 
 	return (part_occupancy + needed_cache_lines <= part_occupancy_limit);
 }

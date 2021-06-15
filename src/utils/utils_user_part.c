@@ -27,9 +27,9 @@ static int ocf_user_part_lst_cmp_valid(struct ocf_cache *cache,
 	struct ocf_user_part *p2 = container_of(e2, struct ocf_user_part,
 			lst_valid);
 	size_t p1_size = ocf_cache_is_device_attached(cache) ?
-				p1->part.runtime->curr_size : 0;
+				p1->part->runtime->curr_size : 0;
 	size_t p2_size = ocf_cache_is_device_attached(cache) ?
-				p2->part.runtime->curr_size : 0;
+				p2->part->runtime->curr_size : 0;
 	int v1 = p1->config->priority;
 	int v2 = p2->config->priority;
 

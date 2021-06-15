@@ -49,9 +49,10 @@ static void cleaning_policy_alru_initialize_test01(void **state)
 	print_test_description("Check if all variables are set correctly");
 
 	cache = test_malloc(sizeof(*cache));
-	cache->user_parts[part_id].part.runtime = test_malloc(sizeof(struct ocf_part_runtime));
+	cache->parts[part_id].runtime = test_malloc(sizeof(struct ocf_part_runtime));
+	cache->parts[part_id].id = part_id;
 	cache->user_parts[part_id].clean_pol = test_malloc(sizeof(*cache->user_parts[part_id].clean_pol));
-	cache->user_parts[part_id].part.id = part_id;
+	cache->user_parts[part_id].part = &cache->parts[part_id];
 	cache->device = test_malloc(sizeof(struct ocf_cache_device));
 	cache->device->runtime_meta = test_malloc(sizeof(struct ocf_superblock_runtime));
 
@@ -70,7 +71,7 @@ static void cleaning_policy_alru_initialize_test01(void **state)
 	test_free(cache->device->runtime_meta);
 	test_free(cache->device);
 	test_free(cache->user_parts[part_id].clean_pol);
-	test_free(cache->user_parts[part_id].part.runtime);
+	test_free(cache->parts[part_id].runtime);
 	test_free(cache);
 }
 
@@ -85,8 +86,10 @@ static void cleaning_policy_alru_initialize_test02(void **state)
 	print_test_description("Check if only appropirate variables are changed");
 
 	cache = test_malloc(sizeof(*cache));
-	cache->user_parts[part_id].part.runtime = test_malloc(sizeof(struct ocf_part_runtime));
+	cache->parts[part_id].runtime = test_malloc(sizeof(struct ocf_part_runtime));
+	cache->parts[part_id].id = part_id;
 	cache->user_parts[part_id].clean_pol = test_malloc(sizeof(*cache->user_parts[part_id].clean_pol));
+	cache->user_parts[part_id].part = &cache->parts[part_id];
 	cache->device = test_malloc(sizeof(struct ocf_cache_device));
 	cache->device->runtime_meta = test_malloc(sizeof(struct ocf_superblock_runtime));
 
@@ -107,7 +110,7 @@ static void cleaning_policy_alru_initialize_test02(void **state)
 	test_free(cache->device->runtime_meta);
 	test_free(cache->device);
 	test_free(cache->user_parts[part_id].clean_pol);
-	test_free(cache->user_parts[part_id].part.runtime);
+	test_free(cache->parts[part_id].runtime);
 	test_free(cache);
 }
 

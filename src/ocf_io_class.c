@@ -35,7 +35,7 @@ int ocf_cache_io_class_get_info(ocf_cache_t cache, uint32_t io_class,
 
 	info->priority = cache->user_parts[part_id].config->priority;
 	info->curr_size = ocf_cache_is_device_attached(cache) ?
-			cache->user_parts[part_id].part.runtime->curr_size : 0;
+			cache->user_parts[part_id].part->runtime->curr_size : 0;
 	info->min_size = cache->user_parts[part_id].config->min_size;
 	info->max_size = cache->user_parts[part_id].config->max_size;
 

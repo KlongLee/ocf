@@ -92,7 +92,7 @@ void ocf_metadata_set_partition_info(struct ocf_cache *cache,
 static void update_partition_head(struct ocf_cache *cache,
 		ocf_part_id_t part_id, ocf_cache_line_t line)
 {
-	struct ocf_part *part = &cache->user_parts[part_id].part;
+	struct ocf_part *part = &cache->parts[part_id];
 
 	part->runtime->head = line;
 }
@@ -104,7 +104,7 @@ void ocf_metadata_add_to_partition(struct ocf_cache *cache,
 	ocf_cache_line_t line_head;
 	ocf_cache_line_t line_entries = cache->device->collision_table_entries;
 	struct ocf_user_part *user_part = &cache->user_parts[part_id];
-	struct ocf_part *part = &user_part->part;
+	struct ocf_part *part = user_part->part;
 
 	ENV_BUG_ON(!(line < line_entries));
 
@@ -151,7 +151,7 @@ void ocf_metadata_remove_from_partition(struct ocf_cache *cache,
 	ocf_cache_line_t prev_line, next_line;
 	uint32_t line_entries = cache->device->collision_table_entries;
 	struct ocf_user_part *user_part = &cache->user_parts[part_id];
-	struct ocf_part *part = &user_part->part;
+	struct ocf_part *part = user_part->part;
 
 	ENV_BUG_ON(!(line < line_entries));
 

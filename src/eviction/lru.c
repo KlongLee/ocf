@@ -246,7 +246,7 @@ static inline struct ocf_lru_list *evp_get_cline_list(ocf_cache_t cache,
 		ocf_cache_line_t cline)
 {
 	ocf_part_id_t part_id = ocf_metadata_get_partition_id(cache, cline);
-	struct ocf_part *part = &cache->user_parts[part_id].part;
+	struct ocf_part *part = &cache->parts[part_id];
 	uint32_t ev_list = (cline % OCF_NUM_EVICTION_LISTS);
 
 	return evp_lru_get_list(part, ev_list,
@@ -579,7 +579,7 @@ void evp_lru_clean(ocf_cache_t cache, struct ocf_user_part *user_part,
 
 	OCF_METADATA_EVICTION_WR_LOCK_ALL();
 
-	lru_iter_cleaning_init(&iter, cache, &user_part->part, evp);
+	lru_iter_cleaning_init(&iter, cache, user_part->part, evp);
 	i = 0;
 	while (i < OCF_EVICTION_CLEAN_SIZE) {
 		cline[i] = lru_iter_cleaning_next(&iter);

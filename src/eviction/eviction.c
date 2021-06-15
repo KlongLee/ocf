@@ -26,7 +26,7 @@ static uint32_t ocf_evict_calculate(ocf_cache_t cache,
 		struct ocf_user_part *user_part, uint32_t to_evict)
 {
 
-	uint32_t curr_part_size = ocf_part_get_occupancy(&user_part->part);
+	uint32_t curr_part_size = ocf_part_get_occupancy(user_part->part);
 	uint32_t min_part_size = ocf_user_part_get_min_size(cache, user_part);
 
 	if (curr_part_size <= min_part_size) {
@@ -60,7 +60,8 @@ static inline uint32_t ocf_evict_part_do(struct ocf_request *req,
 		return 0;
 	}
 
-	return ocf_eviction_need_space(req->cache, req, &user_part->part, to_evict);
+	return ocf_eviction_need_space(req->cache, req, user_part->part,
+			to_evict);
 }
 
 static inline uint32_t ocf_evict_user_partitions(ocf_cache_t cache,
@@ -110,8 +111,8 @@ static inline uint32_t ocf_evict_user_partitions(ocf_cache_t cache,
 		if (overflown_only)
 			to_evict = OCF_MIN(to_evict, overflow_size);
 
-		evicted += ocf_eviction_need_space(cache, req,
-				&user_part->part, to_evict);
+		evicted += ocf_eviction_need_space(cache, req, user_part->part,
+				to_evict);
 
 		if (evicted >= evict_cline_no) {
 			/* Evicted requested number of cache line, stop

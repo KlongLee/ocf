@@ -42,7 +42,7 @@ uint32_t __wrap_ocf_user_part_overflow_size(struct ocf_cache *cache,
 {
 	struct test_cache* tcache = cache;
 
-	return tcache->overflow[user_part->part.id];
+	return tcache->overflow[user_part->part->id];
 }
 
 uint32_t __wrap_ocf_evict_calculate(ocf_cache_t cache,
@@ -50,7 +50,7 @@ uint32_t __wrap_ocf_evict_calculate(ocf_cache_t cache,
 {
 	struct test_cache* tcache = cache;
 
-	return min(tcache->evictable[user_part->part.id], to_evict);
+	return min(tcache->evictable[user_part->part->id], to_evict);
 }
 
 uint32_t __wrap_ocf_eviction_need_space(struct ocf_cache *cache,
@@ -102,9 +102,9 @@ int ocf_user_part_lst_cmp_valid(struct ocf_cache *cache,
 	struct ocf_user_part *p2 = container_of(e2, struct ocf_user_part,
 			lst_valid);
 	size_t p1_size = ocf_cache_is_device_attached(cache) ?
-				p1->part.runtime->curr_size : 0;
+				p1->part->runtime->curr_size : 0;
 	size_t p2_size = ocf_cache_is_device_attached(cache) ?
-				p2->part.runtime->curr_size : 0;
+				p2->part->runtime->curr_size : 0;
 	int v1 = p1->config->priority;
 	int v2 = p2->config->priority;
 
@@ -167,7 +167,8 @@ static void init_part_list(struct test_cache *tcache)
 	unsigned i;
 
 	for (i = 0; i < OCF_USER_IO_CLASS_MAX; i++) {
-		tcache->cache.user_parts[i].part.id = i;
+		tcache->cache.user_parts[i].part = &tcache->cache.parts[i];
+		tcache->cache.user_parts[i].part->id = i;
 		tcache->cache.user_parts[i].config = &tcache->part[i];
 		tcache->cache.user_parts[i].config->priority = i+1;
 		tcache->cache.user_parts[i].config->flags.eviction = 1;
@@ -190,7 +191,7 @@ uint32_t __wrap_ocf_engine_unmapped_count(struct ocf_request *req)
 
 #define _expect_evict_call(tcache, part_id, req_count, ret_count) \
 	do { \
-		expect_value(__wrap_ocf_eviction_need_space, part, &tcache.cache.user_parts[part_id].part); \
+		expect_value(__wrap_ocf_eviction_need_space, part, &tcache.cache.parts[part_id]); \
 		expect_value(__wrap_ocf_eviction_need_space, clines, req_count); \
 		expect_function_call(__wrap_ocf_eviction_need_space); \
 		will_return(__wrap_ocf_eviction_need_space, ret_count); \

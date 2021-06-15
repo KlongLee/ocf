@@ -102,7 +102,7 @@ void set_cache_line_clean(struct ocf_cache *cache, uint8_t start_bit,
 {
 	ocf_cache_line_t line = req->map[map_idx].coll_idx;
 	ocf_part_id_t part_id = ocf_metadata_get_partition_id(cache, line);
-	struct ocf_part *part = &cache->user_parts[part_id].part;
+	struct ocf_part *part = &cache->parts[part_id];
 	uint8_t evp_type = cache->conf_meta->eviction_policy_type;
 	bool line_is_clean;
 
@@ -147,7 +147,7 @@ void set_cache_line_dirty(struct ocf_cache *cache, uint8_t start_bit,
 {
 	ocf_cache_line_t line = req->map[map_idx].coll_idx;
 	ocf_part_id_t part_id = ocf_metadata_get_partition_id(cache, line);
-	struct ocf_part *part = &cache->user_parts[part_id].part;
+	struct ocf_part *part = cache->user_parts[part_id].part;
 	uint8_t evp_type = cache->conf_meta->eviction_policy_type;
 	bool line_was_dirty;
 
