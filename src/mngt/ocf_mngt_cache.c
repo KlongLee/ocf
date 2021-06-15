@@ -20,7 +20,7 @@
 #include "../utils/utils_refcnt.h"
 #include "../utils/utils_async_lock.h"
 #include "../concurrency/ocf_concurrency.h"
-#include "../eviction/ops.h"
+#include "../eviction/lru.h"
 #include "../ocf_ctx_priv.h"
 #include "../cleaning/cleaning.h"
 #include "../promotion/ops.h"
@@ -184,7 +184,7 @@ static void __init_parts_attached(ocf_cache_t cache)
 	ocf_part_id_t part_id;
 
 	for (part_id = 0; part_id < OCF_NUM_PARTITIONS; part_id++)
-		ocf_eviction_initialize(cache, &cache->parts[part_id]);
+		evp_lru_init_evp(cache, &cache->parts[part_id]);
 }
 
 static void __init_free(ocf_cache_t cache)
@@ -222,14 +222,6 @@ static void __deinit_cleaning_policy(ocf_cache_t cache)
 	cleaning_policy = cache->conf_meta->cleaning_policy_type;
 	if (cleaning_policy_ops[cleaning_policy].deinitialize)
 		cleaning_policy_ops[cleaning_policy].deinitialize(cache);
-}
-
-static void __init_eviction_policy(ocf_cache_t cache,
-		ocf_eviction_t eviction)
-{
-	ENV_BUG_ON(eviction < 0 || eviction >= ocf_eviction_max);
-
-	cache->conf_meta->eviction_policy_type = eviction;
 }
 
 static void __setup_promotion_policy(ocf_cache_t cache)
@@ -283,8 +275,7 @@ static void __reset_stats(ocf_cache_t cache)
 	}
 }
 
-static ocf_error_t init_attached_data_structures(ocf_cache_t cache,
-		ocf_eviction_t eviction_policy)
+static ocf_error_t init_attached_data_structures(ocf_cache_t cache)
 {
 	ocf_error_t result;
 
@@ -302,7 +293,6 @@ static ocf_error_t init_attached_data_structures(ocf_cache_t cache,
 		return result;
 	}
 
-	__init_eviction_policy(cache, eviction_policy);
 	__setup_promotion_policy(cache);
 
 	return 0;
@@ -677,7 +667,6 @@ static int _ocf_mngt_init_prepare_cache(struct ocf_cache_mngt_init_params *param
 	cache->pt_unaligned_io = cfg->pt_unaligned_io;
 	cache->use_submit_io_fast = cfg->use_submit_io_fast;
 
-	cache->eviction_policy_init = cfg->eviction_policy;
 	cache->metadata.is_volatile = cfg->metadata_volatile;
 
 out:
@@ -1007,7 +996,7 @@ static void _ocf_mngt_attach_init_instance(ocf_pipeline_t pipeline,
 	ocf_cache_t cache = context->cache;
 	ocf_error_t result;
 
-	result = init_attached_data_structures(cache, cache->eviction_policy_init);
+	result = init_attached_data_structures(cache);
 	if (result)
 		OCF_PL_FINISH_RET(pipeline, result);
 
@@ -1873,11 +1862,6 @@ static int _ocf_mngt_cache_validate_cfg(struct ocf_mngt_cache_config *cfg)
 	if (!ocf_cache_mode_is_valid(cfg->cache_mode))
 		return -OCF_ERR_INVALID_CACHE_MODE;
 
-	if (cfg->eviction_policy >= ocf_eviction_max ||
-			cfg->eviction_policy < 0) {
-		return -OCF_ERR_INVAL;
-	}
-
 	if (cfg->promotion_policy >= ocf_promotion_max ||
 			cfg->promotion_policy < 0 ) {
 		return -OCF_ERR_INVAL;
@@ -2078,15 +2062,12 @@ static int _ocf_mngt_cache_load_core_log(ocf_core_t core, void *cntx)
 static void _ocf_mngt_cache_load_log(ocf_cache_t cache)
 {
 	ocf_cache_mode_t cache_mode = ocf_cache_get_mode(cache);
-	ocf_eviction_t eviction_type = cache->conf_meta->eviction_policy_type;
 	ocf_cleaning_t cleaning_type = cache->conf_meta->cleaning_policy_type;
 	ocf_promotion_t promotion_type = cache->conf_meta->promotion_policy_type;
 
 	ocf_cache_log(cache, log_info, "Successfully loaded\n");
 	ocf_cache_log(cache, log_info, "Cache mode : %s\n",
 			_ocf_cache_mode_get_name(cache_mode));
-	ocf_cache_log(cache, log_info, "Eviction policy : %s\n",
-			evict_policy_ops[eviction_type].name);
 	ocf_cache_log(cache, log_info, "Cleaning policy : %s\n",
 			cleaning_policy_ops[cleaning_type].name);
 	ocf_cache_log(cache, log_info, "Promotion policy : %s\n",
