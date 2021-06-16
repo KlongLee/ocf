@@ -5,7 +5,7 @@
  *	INSERT HERE LIST OF FUNCTIONS YOU WANT TO LEAVE
  *	ONE FUNCTION PER LINE
  *  lru_iter_init
- *  _next_evp
+ *  _lru_next_evp
  *  _lru_evp_is_empty
  *  _lru_evp_set_empty
  *  _lru_evp_all_empty
