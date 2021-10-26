@@ -112,16 +112,8 @@ class OcfCtx:
         self.cleanup_volume_types()
 
         self.lib.ocf_ctx_put(self.ctx_handle)
-
-        # self.cfg = None
-        # self.logger = None
-        # self.data = None
-        # self.cleaner = None
-        # Queue._instances_ = {}
-        # Volume._instances_ = {}
-        # Data._instances_ = {}
-        # Logger._instances_ = {}
-
+        if type(self).default() == self:
+            type(self).default = None
 
 
 lib = OcfLib.getInstance()

@@ -25,7 +25,7 @@ def pyocf_ctx():
     c.register_volume_type(ErrorDevice)
     yield c
     c.exit()
-    gc.collect()
+    gc.collect(2)
 
 
 @pytest.fixture()
@@ -36,4 +36,4 @@ def pyocf_ctx_log_buffer():
     c.register_volume_type(ErrorDevice)
     yield logger
     c.exit()
-    gc.collect()
+    gc.collect(2)
