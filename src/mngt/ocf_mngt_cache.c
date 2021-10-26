@@ -1842,21 +1842,31 @@ static void _ocf_mngt_cache_put_io_queues(ocf_cache_t cache)
 		ocf_queue_put(queue);
 }
 
-static void ocf_mngt_cache_stop_deinit_metadata(ocf_pipeline_t pipeline,
+
+static void ocf_mngt_cache_deinit_cache_volume(ocf_pipeline_t pipeline,
 		void *priv, ocf_pipeline_arg_t arg)
 {
 	struct ocf_mngt_cache_stop_context *context = priv;
 	ocf_cache_t cache = context->cache;
 
 	ocf_volume_close(&cache->device->volume);
-
-	ocf_metadata_deinit_variable_size(cache);
-	ocf_concurrency_deinit(cache);
-
 	ocf_volume_deinit(&cache->device->volume);
 
 	env_vfree(cache->device);
 	cache->device = NULL;
+
+	ocf_pipeline_next(pipeline);
+}
+
+static void ocf_mngt_cache_deinit_metadata(ocf_pipeline_t pipeline,
+		void *priv, ocf_pipeline_arg_t arg)
+{
+	struct ocf_mngt_cache_stop_context *context = priv;
+	ocf_cache_t cache = context->cache;
+
+
+	ocf_metadata_deinit_variable_size(cache);
+	ocf_concurrency_deinit(cache);
 
 	/* TODO: this should be removed from detach after 'attached' stats
 		are better separated in statistics */
@@ -1953,7 +1963,8 @@ struct ocf_pipeline_properties ocf_mngt_cache_stop_pipeline_properties = {
 		OCF_PL_STEP(ocf_mngt_cache_stop_check_dirty),
 		OCF_PL_STEP(ocf_mngt_cache_stop_remove_cores),
 		OCF_PL_STEP(ocf_mngt_cache_stop_unplug),
-		OCF_PL_STEP(ocf_mngt_cache_stop_deinit_metadata),
+		OCF_PL_STEP(ocf_mngt_cache_deinit_metadata),
+		OCF_PL_STEP(ocf_mngt_cache_deinit_cache_volume),
 		OCF_PL_STEP(ocf_mngt_cache_stop_put_io_queues),
 		OCF_PL_STEP_TERMINATOR(),
 	},
@@ -2391,7 +2402,8 @@ ocf_mngt_cache_stop_standby_pipeline_properties = {
 	.finish = ocf_mngt_cache_stop_finish,
 	.steps = {
 		OCF_PL_STEP(ocf_mngt_cache_stop_wait_metadata_io),
-		OCF_PL_STEP(ocf_mngt_cache_stop_deinit_metadata),
+		OCF_PL_STEP(ocf_mngt_cache_deinit_metadata),
+		OCF_PL_STEP(ocf_mngt_cache_deinit_cache_volume),
 		OCF_PL_STEP(ocf_mngt_cache_stop_put_io_queues),
 		OCF_PL_STEP_TERMINATOR(),
 	},
@@ -3342,6 +3354,7 @@ static void ocf_mngt_cache_detach_finish(ocf_pipeline_t pipeline,
 
 	ocf_pipeline_destroy(context->pipeline);
 	ocf_pipeline_destroy(cache->stop_pipeline);
+	cache->stop_pipeline = NULL;
 }
 
 struct ocf_pipeline_properties ocf_mngt_cache_detach_pipeline_properties = {
@@ -3354,6 +3367,8 @@ struct ocf_pipeline_properties ocf_mngt_cache_detach_pipeline_properties = {
 		OCF_PL_STEP(ocf_mngt_cache_stop_check_dirty),
 		OCF_PL_STEP(ocf_mngt_cache_detach_update_metadata),
 		OCF_PL_STEP(ocf_mngt_cache_detach_unplug),
+		OCF_PL_STEP(ocf_mngt_cache_deinit_metadata),
+		OCF_PL_STEP(ocf_mngt_cache_deinit_cache_volume),
 		OCF_PL_STEP_TERMINATOR(),
 	},
 };
