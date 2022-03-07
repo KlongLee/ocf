@@ -13,6 +13,7 @@ from pyocf.types.logger import LogLevel, DefaultLogger, BufferLogger
 from pyocf.types.volume import RamVolume, ErrorDevice
 from pyocf.types.volume_cache import CacheVolume
 from pyocf.types.volume_core import CoreVolume
+from pyocf.types.volume_replicated import ReplicatedVolume
 from pyocf.types.ctx import OcfCtx
 
 
@@ -27,6 +28,7 @@ def pyocf_ctx():
     c.register_volume_type(ErrorDevice)
     c.register_volume_type(CacheVolume)
     c.register_volume_type(CoreVolume)
+    c.register_volume_type(ReplicatedVolume)
     yield c
     c.exit()
     gc.collect()
@@ -40,6 +42,7 @@ def pyocf_ctx_log_buffer():
     c.register_volume_type(ErrorDevice)
     c.register_volume_type(CacheVolume)
     c.register_volume_type(CoreVolume)
+    c.register_volume_type(ReplicatedVolume)
     yield logger
     c.exit()
     gc.collect()
