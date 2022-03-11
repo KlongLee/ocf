@@ -445,9 +445,33 @@ class ErrorDevice(RamVolume):
         self.stats["errors"] = {IoDir.WRITE: 0, IoDir.READ: 0}
 
 
+def volume_new_io(
+    vol: c_void_p,
+    queue: c_void_p,
+    addr: int,
+    length: int,
+    direction: IoDir,
+    io_class: int,
+    flags: int,
+):
+    lib = OcfLib.getInstance()
+    io = lib.ocf_volume_new_io(vol, queue, addr, length, direction, io_class, flags)
+    return Io.from_pointer(io)
+
+
 lib = OcfLib.getInstance()
 lib.ocf_io_get_priv.restype = POINTER(VolumeIoPriv)
 lib.ocf_io_get_volume.argtypes = [c_void_p]
 lib.ocf_io_get_volume.restype = c_void_p
 lib.ocf_io_get_data.argtypes = [c_void_p]
 lib.ocf_io_get_data.restype = c_void_p
+lib.ocf_volume_new_io.argtypes = [
+    c_void_p,
+    c_void_p,
+    c_uint64,
+    c_uint32,
+    c_uint32,
+    c_uint32,
+    c_uint64,
+]
+lib.ocf_volume_new_io.restype = c_void_p
